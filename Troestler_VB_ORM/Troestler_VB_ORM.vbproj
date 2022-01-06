@@ -3,6 +3,12 @@
   <PropertyGroup>
     <RootNamespace>Troestler_VB_ORM</RootNamespace>
     <TargetFramework>net5.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <StartupObject></StartupObject>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="ORMapper.vb~RF3b33c3.TMP" />
+  </ItemGroup>
 
 </Project>

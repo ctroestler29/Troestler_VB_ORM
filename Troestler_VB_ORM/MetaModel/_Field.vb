@@ -1,4 +1,5 @@
 ﻿
+Imports System.Data
 Imports System.Reflection
 Friend Class _Field
 
@@ -129,5 +130,135 @@ Friend Class _Field
         End Set
     End Property
 
+    Public Function ToColumnType(ByVal value As Object) As Object
+        If IsForeignKey Then
+            If value Is Nothing Then
+                Return Nothing
+            End If
+
+            Dim t = If(Type.GenericTypeArguments(0), Type)
+            Return t.GetEntity.PrimaryKey.ToColumnType(t.GetEntity.PrimaryKey.GetVal(value))
+        End If
+
+        If Type Is ColumnType Then
+            Return value
+        End If
+
+        If TypeOf value Is Boolean Then
+            If ColumnType Is GetType(Integer) Then
+                Return If(value, 1, 0)
+            End If
+
+            If ColumnType Is GetType(Short) Then
+                Return CShort(If(value, 1, 0))
+            End If
+
+            If ColumnType Is GetType(Long) Then
+                Return CLng(If(value, 1, 0))
+            End If
+        End If
+
+        Return value
+    End Function
+
+    Public Sub SetVal(ByVal obj As Object, ByVal value As Object)
+        If TypeOf Member Is PropertyInfo Then
+            'Dim a = value.GetType()
+
+            If Member.ToString().Contains("Int") Then
+                Dim objAsConvertible As Int32 = CType(value, Int32)
+                CType(Member, PropertyInfo).SetValue(obj, objAsConvertible)
+            ElseIf Member.ToString().Contains("String") Then
+                Dim objAsConvertible As String = CType(value, String)
+                CType(Member, PropertyInfo).SetValue(obj, objAsConvertible)
+            ElseIf Member.ToString().Contains("Date") Then
+                Dim objAsConvertible As DateTime = CType(value, DateTime)
+                CType(Member, PropertyInfo).SetValue(obj, objAsConvertible)
+            Else
+                CType(Member, PropertyInfo).SetValue(obj, value)
+            End If
+
+
+            Return
+        End If
+
+        Throw New NotSupportedException("Type of Member is not supported.")
+    End Sub
+
+    Public Function GetVal(ByVal obj As Object) As Object
+        If TypeOf Member Is PropertyInfo Then
+            Dim rval = CType(Member, PropertyInfo).GetValue(obj)
+
+            Return rval
+        End If
+
+        Throw New NotSupportedException("Type of Member is not supported.")
+    End Function
+
+    Public Sub UpdateRef(ByVal obj As Object)
+        If Not IsExternal Then Return
+        If GetVal(obj) Is Nothing Then Return
+        Dim innerType As Type = Type.GetGenericArguments()(0)
+        Dim innerEntity As _Entity = innerType.GetEntity()
+        Dim pk = Entity.PrimaryKey.ToColumnType(Entity.PrimaryKey.GetVal(obj))
+
+        If IsManyToMany Then
+            Dim cmd As IDbCommand = Connection.CreateCommand()
+            cmd.CommandText = "DELETE FROM " & AssignmentTable & " WHERE " & ColumnName & " = :pk"
+            Dim p As IDataParameter = cmd.CreateParameter()
+            p.ParameterName = ":pk"
+            p.Value = pk
+            cmd.Parameters.Add(p)
+            cmd.ExecuteNonQuery()
+            cmd.Dispose()
+
+            For Each i In CType(GetVal(obj), IEnumerable)
+                cmd = Connection.CreateCommand()
+                cmd.CommandText = "INSERT INTO " & AssignmentTable & "(" & ColumnName & ", " & RemoteColumnName & ") VALUES (:pk, :fk)"
+                p = cmd.CreateParameter()
+                p.ParameterName = ":pk"
+                p.Value = pk
+                cmd.Parameters.Add(p)
+                p = cmd.CreateParameter()
+                p.ParameterName = ":fk"
+                p.Value = innerEntity.PrimaryKey.ToColumnType(innerEntity.PrimaryKey.GetVal(i))
+                cmd.Parameters.Add(p)
+                cmd.ExecuteNonQuery()
+                cmd.Dispose()
+            Next
+        Else
+            Dim remoteField = innerEntity.GetFieldForColumn(ColumnName)
+
+            If remoteField.IsNullable Then
+                Try
+                    Dim cmd As IDbCommand = Connection.CreateCommand()
+                    cmd.CommandText = "UPDATE " & innerEntity.TableName & " SET " & ColumnName & " = NULL WHERE " & ColumnName & " = :fk"
+                    Dim p As IDataParameter = cmd.CreateParameter()
+                    p.ParameterName = ":fk"
+                    p.Value = pk
+                    cmd.Parameters.Add(p)
+                    cmd.ExecuteNonQuery()
+                    cmd.Dispose()
+                Catch __unusedException1__ As Exception
+                End Try
+            End If
+
+            For Each i In CType(GetVal(obj), IEnumerable)
+                remoteField.SetVal(i, obj)
+                Dim cmd As IDbCommand = Connection.CreateCommand()
+                cmd.CommandText = "UPDATE " & innerEntity.TableName & " SET " & ColumnName & " = :fk WHERE " & innerEntity.PrimaryKey.ColumnName & " = :pk"
+                Dim p As IDataParameter = cmd.CreateParameter()
+                p.ParameterName = ":fk"
+                p.Value = pk
+                cmd.Parameters.Add(p)
+                p = cmd.CreateParameter()
+                p.ParameterName = ":pk"
+                p.Value = innerEntity.PrimaryKey.ToColumnType(innerEntity.PrimaryKey.GetVal(i))
+                cmd.Parameters.Add(p)
+                cmd.ExecuteNonQuery()
+                cmd.Dispose()
+            Next
+        End If
+    End Sub
 
 End Class

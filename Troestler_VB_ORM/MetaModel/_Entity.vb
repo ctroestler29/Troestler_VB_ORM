@@ -37,8 +37,8 @@ Friend Class _Entity
                 field.ColumnName = If(fattr?.ColumnName, i.Name)
                 field.ColumnType = If(fattr?.ColumnType, i.PropertyType)
                 field.IsNullable = fattr.IsNullable
-
-                If field.IsForeignKey = (TypeOf fattr Is FKAttr) Then
+                field.IsForeignKey = (TypeOf fattr Is FKAttr)
+                If field.IsForeignKey Then
                     field.IsExternal = GetType(IEnumerable).IsAssignableFrom(i.PropertyType)
                     field.AssignmentTable = CType(fattr, FKAttr).AssignmentTable
                     field.RemoteColumnName = CType(fattr, FKAttr).RemoteColumnName
@@ -114,6 +114,38 @@ Friend Class _Entity
         End Set
     End Property
 
+    Public Function GetSQL(Optional prefix As String = Nothing) As String
+        If Equals(prefix, Nothing) Then
+            prefix = ""
+        End If
+
+        Dim query = "SELECT "
+
+        For i = 0 To Internals.Length - 1
+
+            If i > 0 Then
+                query += ", "
+            End If
+
+            query += prefix.Trim() & Internals(i).ColumnName
+        Next
+
+        query += " FROM " & TableName
+        Return query
+    End Function
+
+    Public Function GetFieldForColumn(ByVal columnName As String) As _Field
+        columnName = columnName.ToUpper()
+
+        For Each i In Internals
+
+            If Equals(i.ColumnName.ToUpper(), columnName) Then
+                Return i
+            End If
+        Next
+
+        Return Nothing
+    End Function
 
 
 End Class
