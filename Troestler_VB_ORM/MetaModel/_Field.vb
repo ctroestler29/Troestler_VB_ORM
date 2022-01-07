@@ -261,4 +261,59 @@ Friend Class _Field
         End If
     End Sub
 
+    Public Function ToFieldType(ByVal value As Object, ByVal localCache As ICollection(Of Object)) As Object
+        If IsForeignKey Then
+            Return CreateObj(Type, value, localCache)
+        End If
+
+        If Type Is GetType(Boolean) Then
+            If TypeOf value Is Integer Then
+                Return CInt(value) <> 0
+            End If
+
+            If TypeOf value Is Long Then
+                Return CLng(value) <> 0
+            End If
+
+            If TypeOf value Is Short Then
+                Return CShort(value) <> 0
+            End If
+
+
+        End If
+
+        If Type Is GetType(Short) Then
+            Return Convert.ToInt16(value)
+        End If
+
+        If Type Is GetType(Integer) Then
+            Return Convert.ToInt32(value)
+        End If
+
+        If Type Is GetType(Long) Then
+            Return Convert.ToInt64(value)
+        End If
+
+        If Type.IsEnum Then
+            Return [Enum].ToObject(Type, value)
+        End If
+
+        Return value
+    End Function
+
+    Public Function Fill(ByVal list As Object, ByVal obj As Object, ByVal localCache As ICollection(Of Object)) As Object
+        Call _FillList(Type.GenericTypeArguments(0), list, _FkSql, New Tuple(Of String, Object)() {New Tuple(Of String, Object)(":fk", Entity.PrimaryKey.GetVal(obj))}, localCache)
+        Return list
+    End Function
+
+    Friend ReadOnly Property _FkSql As String
+        Get
+            If IsManyToMany Then
+                Return Type.GenericTypeArguments(0).GetEntity().GetSQL() & " WHERE ID IN (SELECT " & RemoteColumnName & " FROM " & AssignmentTable & " WHERE " & ColumnName & " = :fk)"
+            End If
+
+            Return Type.GenericTypeArguments(0).GetEntity().GetSQL() & " WHERE " & ColumnName & " = :fk"
+        End Get
+    End Property
+
 End Class
