@@ -7,6 +7,7 @@ Module Program
         ORMapper.Cache = New Cache()
         Call DoInsert()
         Call DoModify()
+        Call DOCacheTest()
 
         Call Connection.Close()
     End Sub

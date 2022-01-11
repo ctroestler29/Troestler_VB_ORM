@@ -3,4 +3,5 @@
 
     Function Contains(t As Type, pk As Object) As Boolean
     Sub Put(o As Object)
+
 End Interface

@@ -6,7 +6,11 @@ Public Module ORMapper
     Public Property Connection As IDbConnection
     Public Property Cache As ICache
 
-    Public Function [Get](Of T)(ByVal pk As Object) As T
+    Public Function [Get](Of T)(pk As Object) As T
+        If pk Is Nothing Then
+            Throw New ArgumentNullException(NameOf(pk))
+        End If
+
         Return CreateObj(GetType(T), pk, Nothing)
     End Function
 
@@ -65,7 +69,8 @@ Public Module ORMapper
         dbc.ExecuteNonQuery()
         dbc.Dispose()
 
-        For Each ii As _Field In entity.Externals
+        For i = 0 To entity.Externals.Length - 1
+            Dim ii As _Field = entity.Externals(i)
             ii.UpdateRef(obj)
         Next
 
@@ -77,10 +82,12 @@ Public Module ORMapper
 
 
     <Extension()>
-    Friend Function GetEntity(ByVal o As Object) As _Entity
-        Dim t As Type = (If((TypeOf o Is Type), CType(o, Type), o.GetType()))
+    Friend Function GetEntity(o As Object) As _Entity
+        Dim t As Type = If(Not (TypeOf o Is Type), o.GetType(), CType(o, Type))
 
-        If Not _Entities.ContainsKey(t) Then
+        Dim hv As Boolean = Not _Entities.ContainsKey(t)
+
+        If hv Then
             Call _Entities.Add(t, New _Entity(t))
         End If
 
@@ -105,9 +112,10 @@ Public Module ORMapper
         re.Close()
         cmd.Dispose()
 
-        If Cache IsNot Nothing Then
-            Cache.Put(rval)
+        If Cache Is Nothing Then
+            Return rval
         End If
+        Cache.Put(rval)
 
         Return rval
     End Function
@@ -126,12 +134,13 @@ Public Module ORMapper
             rval = _SearchCache(t, ent.PrimaryKey.ToFieldType(re.GetValue(re.GetOrdinal(ent.PrimaryKey.ColumnName)), localCache), localCache)
         End If
 
-        For Each i In ent.Internals
+        For i1 = 0 To ent.Internals.Length - 1
+            Dim i = ent.Internals(i1)
             i.SetVal(rval, i.ToFieldType(re.GetValue(re.GetOrdinal(i.ColumnName)), localCache))
         Next
 
-        For Each i In ent.Externals
-
+        For i1 = 0 To ent.Externals.Length - 1
+            Dim i = ent.Externals(i1)
             i.SetVal(rval, i.Fill(Activator.CreateInstance(i.Type), rval, localCache))
 
         Next
@@ -165,20 +174,24 @@ Public Module ORMapper
 
     Friend Function _SearchCache(ByVal t As Type, ByVal pk As Object, ByVal localCache As ICollection(Of Object)) As Object
 
-        If Cache IsNot Nothing AndAlso Cache.Contains(t, pk) Then
-            Return Cache.Get(t, pk)
-        End If
-        If localCache IsNot Nothing Then
+        If Cache Is Nothing OrElse Not Cache.Contains(t, pk) Then
+            If localCache Is Nothing Then
+
+                Return Nothing
+            End If
             For Each i In localCache
-                If i.GetType() IsNot t Then Continue For
+                If i.GetType() _
+                   IsNot t Then Continue For
 
-                If t.GetEntity().PrimaryKey.GetVal(i).Equals(pk) Then
-                    Return i
+                If Not t.GetEntity().PrimaryKey.GetVal(i).Equals(pk) Then
+                    Continue For
                 End If
+                Return i
             Next
-        End If
 
-        Return Nothing
+            Return Nothing
+        End If
+        Return Cache.Get(t, pk)
     End Function
 
 
