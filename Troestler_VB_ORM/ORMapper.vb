@@ -16,62 +16,49 @@ Public Module ORMapper
 
     Public Sub SaveObj(ByVal obj As Object)
         'Create entity out of object
-        Dim entity As _Entity = obj.GetType().GetEntity
-        Dim query As String = "INSERT INTO " & entity.TableName & " ("
-        Dim _insertval = ""
-        Dim conflict As String = "ON CONFLICT (" & entity.PrimaryKey.ColumnName & ") DO UPDATE SET "
-        Dim dbc As IDbCommand = Connection.CreateCommand()
-        'dbc.CommandText = insertsql;
-        Dim p As IDbDataParameter
-        Dim i = 0
+        Dim ent As _Entity = obj.GetType().GetEntity
+        Dim cmd As IDbCommand = Connection.CreateCommand()
+        cmd.CommandText = "INSERT INTO " & ent.TableName & " ("
+        Dim update = "ON CONFLICT (" & ent.PrimaryKey.ColumnName & ") DO UPDATE SET "
+        Dim insert = ""
+        Dim p As IDataParameter
+        Dim first = True
 
-        While i < entity.Internals.Length
+        For i = 0 To ent.Internals.Length - 1
 
-            If i = 0 Then
-                query += entity.Internals(i).ColumnName & ", "
-                _insertval += " VALUES ( :v0, "
-                p = dbc.CreateParameter()
-                p.ParameterName = (":v" & i.ToString())
-                p.Value = entity.Internals(i).ToColumnType(entity.Internals(i).GetVal(obj))
-                dbc.Parameters.Add(p)
-            ElseIf i > 0 AndAlso i < entity.Internals.Length - 1 Then
-                query += entity.Internals(i).ColumnName & ", "
-                _insertval += ":v" & i.ToString() & ", "
-                p = dbc.CreateParameter()
-                p.ParameterName = (":v" & i.ToString())
-                p.Value = entity.Internals(i).ToColumnType(entity.Internals(i).GetVal(obj))
-                dbc.Parameters.Add(p)
-            Else
-                query += entity.Internals(i).ColumnName
-                _insertval += ":v" & i.ToString()
-                p = dbc.CreateParameter()
-                p.ParameterName = (":v" & i.ToString())
-                p.Value = entity.Internals(i).ToColumnType(entity.Internals(i).GetVal(obj))
-                dbc.Parameters.Add(p)
+            If i > 0 Then
+                cmd.CommandText += ", "
+                insert += ", "
             End If
 
-            If Not entity.Internals(i).IsPrimaryKey Then
-                If i <> 0 Then
-                    conflict += ", "
+            cmd.CommandText += ent.Internals(i).ColumnName
+            insert += (":v" & i.ToString())
+            p = cmd.CreateParameter()
+            p.ParameterName = (":v" & i.ToString())
+            p.Value = ent.Internals(i).ToColumnType(ent.Internals(i).GetVal(obj))
+            cmd.Parameters.Add(p)
+
+            If Not ent.Internals(i).IsPrimaryKey Then
+                If first Then
+                    first = False
+                Else
+                    update += ", "
                 End If
 
-                conflict += (entity.Internals(i).ColumnName & " = " & (":c" & i.ToString()))
-                p = dbc.CreateParameter()
-                p.ParameterName = (":c" & i.ToString())
-                p.Value = entity.Internals(i).ToColumnType(entity.Internals(i).GetVal(obj))
-                dbc.Parameters.Add(p)
+                update += (ent.Internals(i).ColumnName & " = " & (":w" & i.ToString()))
+                p = cmd.CreateParameter()
+                p.ParameterName = (":w" & i.ToString())
+                p.Value = ent.Internals(i).ToColumnType(ent.Internals(i).GetVal(obj))
+                cmd.Parameters.Add(p)
             End If
+        Next
 
-            i += 1
-        End While
+        cmd.CommandText += ") VALUES (" & insert & ") " & update
+        cmd.ExecuteNonQuery()
+        cmd.Dispose()
 
-        dbc.CommandText = query & ")" & _insertval & ") " & conflict
-        dbc.ExecuteNonQuery()
-        dbc.Dispose()
-
-        For i = 0 To entity.Externals.Length - 1
-            Dim ii As _Field = entity.Externals(i)
-            ii.UpdateRef(obj)
+        For Each i In ent.Externals
+            i.UpdateRef(obj)
         Next
 
         If Cache IsNot Nothing Then
@@ -141,7 +128,11 @@ Public Module ORMapper
 
         For i1 = 0 To ent.Externals.Length - 1
             Dim i = ent.Externals(i1)
-            i.SetVal(rval, i.Fill(Activator.CreateInstance(i.Type), rval, localCache))
+            If GetType(ILazyLoading).IsAssignableFrom(i.Type) Then
+                i.SetVal(rval, Activator.CreateInstance(i.Type, rval, i.Member.Name))
+            Else
+                i.SetVal(rval, i.Fill(Activator.CreateInstance(i.Type), rval, localCache))
+            End If
 
         Next
 

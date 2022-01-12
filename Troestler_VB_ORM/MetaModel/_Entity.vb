@@ -147,5 +147,16 @@ Friend Class _Entity
         Return Nothing
     End Function
 
+    Public Function GetFieldByName(ByVal fieldName As String) As _Field
+        For Each i In Fields
+
+            If Equals(i.Member.Name, fieldName) Then
+                Return i
+            End If
+        Next
+
+        Return Nothing
+    End Function
+
 
 End Class

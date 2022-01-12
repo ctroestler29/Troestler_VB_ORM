@@ -136,7 +136,7 @@ Friend Class _Field
                 Return Nothing
             End If
 
-            Dim t = If(Type.GenericTypeArguments(0), Type)
+            Dim t = If(GetType(ILazyLoading).IsAssignableFrom(Type), Type.GenericTypeArguments(0), Type)
             Return t.GetEntity.PrimaryKey.ToColumnType(t.GetEntity.PrimaryKey.GetVal(value))
         End If
 
@@ -188,7 +188,11 @@ Friend Class _Field
     Public Function GetVal(ByVal obj As Object) As Object
         If TypeOf Member Is PropertyInfo Then
             Dim rval = CType(Member, PropertyInfo).GetValue(obj)
-
+            If TypeOf rval Is ILazyLoading Then
+                If Not (TypeOf rval Is IEnumerable) Then
+                    Return rval.GetType().GetProperty("Value").GetValue(rval)
+                End If
+            End If
             Return rval
         End If
 
@@ -263,6 +267,9 @@ Friend Class _Field
 
     Public Function ToFieldType(ByVal value As Object, ByVal localCache As ICollection(Of Object)) As Object
         If IsForeignKey Then
+            If GetType(ILazyLoading).IsAssignableFrom(Type) Then
+                Return Activator.CreateInstance(Type, value)
+            End If
             Return CreateObj(Type, value, localCache)
         End If
 

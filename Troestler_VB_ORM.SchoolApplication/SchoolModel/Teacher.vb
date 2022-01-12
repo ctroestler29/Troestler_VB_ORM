@@ -6,16 +6,6 @@ Public Class Teacher
     Public Property HireDate As Date
     Public Property Salary As Integer
 
-    Private _CList As List(Of _Class)
-
-
     <FKAttr(ColumnName:="KTEACHER")>
-    Public Property CList As List(Of _Class)
-        Get
-            Return _CList
-        End Get
-        Private Set(value As List(Of _Class))
-            _CList = value
-        End Set
-    End Property
+    Public Property _CList As List(Of _Class) = New List(Of _Class)
 End Class

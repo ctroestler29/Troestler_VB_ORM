@@ -7,22 +7,22 @@ Public Class _Class
     Public Property Name As String
 
     <FKAttr(ColumnName:="KTEACHER")>
-    Private Property _Teacher As Teacher = New Teacher()
+    Private Property _Teacher As LazyLoadingObj(Of Teacher) = New LazyLoadingObj(Of Teacher)()
 
     <IgnoreAttr>
     Public Property Teacher As Teacher
         Get
-            Return _Teacher
+            Return _Teacher.Value
         End Get
         Set(value As Teacher)
-            _Teacher = value
+            _Teacher.Value = value
         End Set
     End Property
 
     <FKAttr(ColumnName:="KCLASS")>
-    Public Property Students As List(Of Student)
+    Public Property Students As LazyLoadingList(Of Student)
 
     Public Sub New()
-        Students = New List(Of Student)
+        Students = New LazyLoadingList(Of Student)(Me, "Students")
     End Sub
 End Class
