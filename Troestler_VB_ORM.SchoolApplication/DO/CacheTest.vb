@@ -3,6 +3,7 @@
 
         Console.WriteLine("Cache-Test:")
         Call GetInstanceNumber()
+        Console.WriteLine(vbLf)
     End Sub
 
 

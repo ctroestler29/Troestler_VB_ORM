@@ -19,10 +19,7 @@ Public Class _Class
         End Set
     End Property
 
-    <FKAttr(ColumnName:="KCLASS")>
-    Public Property Students As LazyLoadingList(Of Student)
+    <FKAttr(AssignmentTable:="STUDENTS_CLASSES", ColumnName:="KCLASS", RemoteColumnName:="KSTUDENT")>
+    Public Students As List(Of Student) = New List(Of Student)()
 
-    Public Sub New()
-        Students = New LazyLoadingList(Of Student)(Me, "Students")
-    End Sub
 End Class

@@ -14,7 +14,12 @@ Public Module ORMapper
         Return CreateObj(GetType(T), pk, Nothing)
     End Function
 
-    Public Sub SaveObj(ByVal obj As Object)
+    Public Sub SaveObj(ByRef obj As Object)
+
+        If Cache IsNot Nothing Then
+            If Not Cache.Changed(obj) Then Return
+        End If
+
         'Create entity out of object
         Dim ent As _Entity = obj.GetType().GetEntity
         Dim cmd As IDbCommand = Connection.CreateCommand()
@@ -69,7 +74,7 @@ Public Module ORMapper
 
 
     <Extension()>
-    Friend Function GetEntity(o As Object) As _Entity
+    Friend Function GetEntity(ByRef o As Object) As _Entity
         Dim t As Type = If(Not (TypeOf o Is Type), o.GetType(), CType(o, Type))
 
         Dim hv As Boolean = Not _Entities.ContainsKey(t)
@@ -139,7 +144,7 @@ Public Module ORMapper
         Return rval
     End Function
 
-    Friend Sub _FillList(ByVal t As Type, ByVal list As Object, ByVal sql As String, ByVal parameters As IEnumerable(Of Tuple(Of String, Object)), ByVal Optional localCache As ICollection(Of Object) = Nothing)
+    Friend Sub _FillList(ByVal t As Type, ByRef list As Object, ByVal sql As String, ByVal parameters As IEnumerable(Of Tuple(Of String, Object)), ByVal Optional localCache As ICollection(Of Object) = Nothing)
         Dim cmd As IDbCommand = Connection.CreateCommand()
         cmd.CommandText = sql
 
@@ -157,13 +162,13 @@ Public Module ORMapper
         cmd.Dispose()
     End Sub
 
-    Friend Sub _FillList(ByVal t As Type, ByVal list As Object, ByVal re As IDataReader, ByVal Optional localCache As ICollection(Of Object) = Nothing)
+    Friend Sub _FillList(ByVal t As Type, ByRef list As Object, ByVal re As IDataReader, ByVal Optional localCache As ICollection(Of Object) = Nothing)
         While re.Read()
             list.GetType().GetMethod("Add").Invoke(list, New Object() {CreateObj(t, re, localCache)})
         End While
     End Sub
 
-    Friend Function _SearchCache(ByVal t As Type, ByVal pk As Object, ByVal localCache As ICollection(Of Object)) As Object
+    Friend Function _SearchCache(ByVal t As Type, ByRef pk As Object, ByVal localCache As ICollection(Of Object)) As Object
 
         If Cache Is Nothing OrElse Not Cache.Contains(t, pk) Then
             If localCache Is Nothing Then

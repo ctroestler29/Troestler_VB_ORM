@@ -20,6 +20,7 @@ Module Program
         Dim drop3 As String = "DROP TABLE STUDENTS"
         Dim drop4 As String = "DROP TABLE COURSES"
         Dim drop5 As String = "DROP TABLE STUDENT_COURSES"
+        Dim drop6 As String = "DROP TABLE STUDENTS_CLASSES"
 
 
         cmd.CommandText = drop1
@@ -37,6 +38,9 @@ Module Program
         cmd.CommandText = drop5
         cmd.ExecuteNonQuery()
 
+        cmd.CommandText = drop6
+        cmd.ExecuteNonQuery()
+
         cmd.CommandText = schema
         cmd.ExecuteNonQuery()
 
@@ -45,6 +49,7 @@ Module Program
         Call DoModify()
         Call DOCacheTest()
         Call DOFKTest()
+        Call Do_M_N()
         Call Connection.Close()
     End Sub
 End Module

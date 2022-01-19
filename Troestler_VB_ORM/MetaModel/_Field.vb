@@ -130,7 +130,7 @@ Friend Class _Field
         End Set
     End Property
 
-    Public Function ToColumnType(ByVal value As Object) As Object
+    Public Function ToColumnType(ByRef value As Object) As Object
         If IsForeignKey Then
             If value Is Nothing Then
                 Return Nothing
@@ -161,7 +161,7 @@ Friend Class _Field
         Return value
     End Function
 
-    Public Sub SetVal(ByVal obj As Object, ByVal value As Object)
+    Public Sub SetVal(ByRef obj As Object, ByRef value As Object)
         If TypeOf Member Is PropertyInfo Then
             'Dim a = value.GetType()
 
@@ -185,7 +185,7 @@ Friend Class _Field
         Throw New NotSupportedException("Type of Member is not supported.")
     End Sub
 
-    Public Function GetVal(ByVal obj As Object) As Object
+    Public Function GetVal(ByRef obj As Object) As Object
         If TypeOf Member Is PropertyInfo Then
             Dim rval = CType(Member, PropertyInfo).GetValue(obj)
             If TypeOf rval Is ILazyLoading Then
@@ -199,7 +199,7 @@ Friend Class _Field
         Throw New NotSupportedException("Type of Member is not supported.")
     End Function
 
-    Public Sub UpdateRef(ByVal obj As Object)
+    Public Sub UpdateRef(ByRef obj As Object)
         If Not IsExternal Then Return
         If GetVal(obj) Is Nothing Then Return
         Dim innerType As Type = Type.GetGenericArguments()(0)
@@ -265,7 +265,7 @@ Friend Class _Field
         End If
     End Sub
 
-    Public Function ToFieldType(ByVal value As Object, ByVal localCache As ICollection(Of Object)) As Object
+    Public Function ToFieldType(ByRef value As Object, ByVal localCache As ICollection(Of Object)) As Object
         If IsForeignKey Then
             If GetType(ILazyLoading).IsAssignableFrom(Type) Then
                 Return Activator.CreateInstance(Type, value)
@@ -308,7 +308,7 @@ Friend Class _Field
         Return value
     End Function
 
-    Public Function Fill(ByVal list As Object, ByVal obj As Object, ByVal localCache As ICollection(Of Object)) As Object
+    Public Function Fill(ByRef list As Object, ByRef obj As Object, ByVal localCache As ICollection(Of Object)) As Object
         Call _FillList(Type.GenericTypeArguments(0), list, _FkSql, New Tuple(Of String, Object)() {New Tuple(Of String, Object)(":fk", Entity.PrimaryKey.GetVal(obj))}, localCache)
         Return list
     End Function

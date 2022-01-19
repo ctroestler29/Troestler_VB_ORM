@@ -4,7 +4,7 @@
         Dim t = [Get](Of Teacher)("t.0")
         Dim c As _Class = New _Class()
         c.ID = "c.0"
-        c.Name = "Demonolgy 101"
+        c.Name = "SWE"
         c.Teacher = t
         SaveObj(c)
         c = [Get](Of _Class)("c.0")
