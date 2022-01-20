@@ -10,5 +10,6 @@
         c = [Get](Of _Class)("c.0")
         Console.WriteLine(c.Name & " wird von " & c.Teacher.FirstName & " " & c.Teacher.Name & " unterichtet")
         Console.WriteLine(vbLf)
+
     End Sub
 End Module

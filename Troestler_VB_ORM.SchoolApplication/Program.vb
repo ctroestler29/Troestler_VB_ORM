@@ -19,8 +19,8 @@ Module Program
         Dim drop2 As String = "DROP TABLE CLASSES"
         Dim drop3 As String = "DROP TABLE STUDENTS"
         Dim drop4 As String = "DROP TABLE COURSES"
-        Dim drop5 As String = "DROP TABLE STUDENT_COURSES"
-        Dim drop6 As String = "DROP TABLE STUDENTS_CLASSES"
+        Dim drop5 As String = "DROP TABLE STUDENTS_CLASSES"
+        Dim drop6 As String = "DROP TABLE LOCKS"
 
 
         cmd.CommandText = drop1
@@ -50,6 +50,7 @@ Module Program
         Call DOCacheTest()
         Call DOFKTest()
         Call Do_M_N()
+        Call DoDBLocking()
         Call Connection.Close()
     End Sub
 End Module

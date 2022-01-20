@@ -5,6 +5,7 @@ Public Module ORMapper
 
     Public Property Connection As IDbConnection
     Public Property Cache As ICache
+    Public Property ORLocking As ILockDB
 
     Public Function [Get](Of T)(pk As Object) As T
         If pk Is Nothing Then
@@ -189,6 +190,12 @@ Public Module ORMapper
         End If
         Return Cache.Get(t, pk)
     End Function
+
+    Public Sub LockDBObject(obj As Object)
+        If ORLocking IsNot Nothing Then
+            ORLocking.Lock(obj)
+        End If
+    End Sub
 
 
 
