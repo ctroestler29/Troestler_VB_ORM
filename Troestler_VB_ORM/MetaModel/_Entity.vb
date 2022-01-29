@@ -2,7 +2,7 @@
 Imports System.Reflection
 Friend Class _Entity
 
-    Private _Member As System.Type
+    Private _Member As Type
     Private _TableName As String
     Private _Fields As _Field()
     Private _Externals As _Field()
@@ -10,109 +10,107 @@ Friend Class _Entity
     Private _PrimaryKey As _Field
 
     Public Sub New(t As Type)
-        Dim tattr = CType(t.GetCustomAttribute(GetType(EntityAttr)), EntityAttr)
+        If t IsNot Nothing Then
 
-        If tattr Is Nothing OrElse String.IsNullOrWhiteSpace(tattr.TableName) Then
-            TableName = t.Name.ToUpper()
-        Else
-            TableName = tattr.TableName
-        End If
 
-        Member = t
-        Dim fields As List(Of _Field) = New List(Of _Field)()
-
-        Dim array = t.GetProperties(BindingFlags.Public Or BindingFlags.NonPublic Or BindingFlags.Instance)
-        For i1 = 0 To array.Length - 1
-            Dim i = array(i1)
-            If CType(i.GetCustomAttribute(GetType(IgnoreAttr)), IgnoreAttr) IsNot Nothing Then Continue For
-            Dim field As _Field = New _Field(Me)
-            Dim fattr = CType(i.GetCustomAttribute(GetType(FieldAttr)), FieldAttr)
-
-            If fattr IsNot Nothing Then
-                If TypeOf fattr Is PKAttr Then
-                    PrimaryKey = field
-                    field.IsPrimaryKey = True
-                End If
-
-                field.ColumnName = If(fattr?.ColumnName, i.Name)
-                field.ColumnType = If(fattr?.ColumnType, i.PropertyType)
-                field.IsNullable = fattr.IsNullable
-                field.IsForeignKey = (TypeOf fattr Is FKAttr)
-                If field.IsForeignKey Then
-                    field.IsExternal = GetType(IEnumerable).IsAssignableFrom(i.PropertyType)
-                    field.AssignmentTable = CType(fattr, FKAttr).AssignmentTable
-                    field.RemoteColumnName = CType(fattr, FKAttr).RemoteColumnName
-                    field.IsManyToMany = Not String.IsNullOrWhiteSpace(field.AssignmentTable)
-                End If
+            If CType(t.GetCustomAttribute(GetType(EntityAttr)), EntityAttr) Is Nothing OrElse String.IsNullOrWhiteSpace(CType(t.GetCustomAttribute(GetType(EntityAttr)), EntityAttr).TableName) Then
+                SetTableName(t.Name.ToUpper())
             Else
-                If (i.GetGetMethod() Is Nothing) OrElse (Not i.GetGetMethod().IsPublic) Then Continue For
-                field.ColumnName = i.Name
-                field.ColumnName = i.Name
-                field.ColumnType = i.PropertyType
+                SetTableName(CType(t.GetCustomAttribute(GetType(EntityAttr)), EntityAttr).TableName)
             End If
 
-            field.Member = i
-            fields.Add(field)
-        Next
+            SetMember(t)
+                Dim fields As List(Of _Field) = New List(Of _Field)()
 
-        Me.Fields = fields.ToArray()
-        Internals = fields.Where(Function(m) Not m.IsExternal).ToArray()
-        Externals = fields.Where(Function(m) m.IsExternal).ToArray()
+                For i1 = 0 To t.GetProperties(BindingFlags.Public Or BindingFlags.NonPublic Or BindingFlags.Instance).Length - 1
+                    Dim i = t.GetProperties(BindingFlags.Public Or BindingFlags.NonPublic Or BindingFlags.Instance)(i1)
+                    If CType(i.GetCustomAttribute(GetType(IgnoreAttr)), IgnoreAttr) IsNot Nothing Then Continue For
+                    Dim field As _Field = New _Field(Me)
+                    Dim fattr = CType(i.GetCustomAttribute(GetType(FieldAttr)), FieldAttr)
+
+                    If fattr Is Nothing Then
+                        If (i.GetGetMethod() Is Nothing) OrElse (Not i.GetGetMethod().IsPublic) Then Continue For
+                        field.SetColumnName(value:=i.Name)
+                        field.SetColumnName(value:=i.Name)
+                        field.SetColumnType(value:=i.PropertyType)
+                    Else
+
+                        If TypeOf fattr Is PKAttr Then
+                        SetPrimaryKey(field)
+                        field.SetIsPrimaryKey(True)
+                    End If
+
+                    field.SetColumnName(If(fattr?.ColumnName, i.Name))
+                    field.SetColumnType(If(fattr?.ColumnType, i.PropertyType))
+                    field.SetIsNullable(fattr.IsNullable)
+                    field.SetIsForeignKey((TypeOf fattr Is FKAttr))
+                    If field.GetIsForeignKey() Then
+                        field.SetIsExternal(GetType(IEnumerable).IsAssignableFrom(i.PropertyType))
+                        field.SetAssignmentTable(CType(fattr, FKAttr).AssignmentTable)
+                        field.SetRemoteColumnName(CType(fattr, FKAttr).RemoteColumnName)
+                        field.SetIsManyToMany(Not String.IsNullOrWhiteSpace(field.GetAssignmentTable()))
+                    End If
+                End If
+
+                field.SetMember(i)
+                fields.Add(field)
+            Next
+
+            Me.SetFields(fields.ToArray())
+            SetInternals(fields.Where(Function(m) Not m.GetIsExternal()).ToArray())
+            SetExternals(fields.Where(Function(m) m.GetIsExternal()).ToArray())
+        Else
+            Throw New ArgumentNullException(NameOf(t))
+        End If
     End Sub
 
-    Public Property Member As Type
-        Get
-            Return _Member
-        End Get
-        Private Set(value As Type)
-            _Member = value
-        End Set
-    End Property
+    Public Function GetMember() As Type
+        Return _Member
+    End Function
 
-    Public Property TableName As String
-        Get
-            Return _TableName
-        End Get
-        Private Set(value As String)
-            _TableName = value
-        End Set
-    End Property
+    Private Sub SetMember(value As Type)
+        _Member = value
+    End Sub
 
-    Public Property Fields As _Field()
-        Get
-            Return _Fields
-        End Get
-        Private Set(value As _Field())
-            _Fields = value
-        End Set
-    End Property
+    Public Function GetTableName() As String
+        Return _TableName
+    End Function
 
-    Public Property Externals As _Field()
-        Get
-            Return _Externals
-        End Get
-        Private Set(value As _Field())
-            _Externals = value
-        End Set
-    End Property
+    Private Sub SetTableName(value As String)
+        _TableName = value
+    End Sub
 
-    Public Property Internals As _Field()
-        Get
-            Return _Internals
-        End Get
-        Private Set(value As _Field())
-            _Internals = value
-        End Set
-    End Property
+    Public Function GetFields() As _Field()
+        Return _Fields
+    End Function
 
-    Public Property PrimaryKey As _Field
-        Get
-            Return _PrimaryKey
-        End Get
-        Private Set(value As _Field)
-            _PrimaryKey = value
-        End Set
-    End Property
+    Private Sub SetFields(value As _Field())
+        _Fields = value
+    End Sub
+
+    Public Function GetExternals() As _Field()
+        Return _Externals
+    End Function
+
+    Private Sub SetExternals(value As _Field())
+        _Externals = value
+    End Sub
+
+    Public Function GetInternals() As _Field()
+        Return _Internals
+    End Function
+
+    Private Sub SetInternals(value As _Field())
+        _Internals = value
+    End Sub
+
+    Public Function GetPrimaryKey() As _Field
+        Return _PrimaryKey
+    End Function
+
+    Private Sub SetPrimaryKey(value As _Field)
+        _PrimaryKey = value
+    End Sub
 
     Public Function GetSQL(Optional prefix As String = Nothing) As String
         If Equals(prefix, Nothing) Then
@@ -121,25 +119,25 @@ Friend Class _Entity
 
         Dim query = "SELECT "
 
-        For i = 0 To Internals.Length - 1
+        For i = 0 To GetInternals().Length - 1
 
             If i > 0 Then
                 query += ", "
             End If
 
-            query += prefix.Trim() & Internals(i).ColumnName
+            query += prefix.Trim() & GetInternals()(i).GetColumnName()
         Next
 
-        query += " FROM " & TableName
+        query += " FROM " & GetTableName()
         Return query
     End Function
 
     Public Function GetFieldForColumn(ByVal columnName As String) As _Field
         columnName = columnName.ToUpper()
 
-        For Each i In Internals
+        For Each i In GetInternals()
 
-            If Equals(i.ColumnName.ToUpper(), columnName) Then
+            If Equals(i.GetColumnName().ToUpper(), columnName) Then
                 Return i
             End If
         Next
@@ -148,9 +146,9 @@ Friend Class _Entity
     End Function
 
     Public Function GetFieldByName(ByVal fieldName As String) As _Field
-        For Each i In Fields
+        For Each i In GetFields()
 
-            If Equals(i.Member.Name, fieldName) Then
+            If Equals(i.GetMember().Name, fieldName) Then
                 Return i
             End If
         Next

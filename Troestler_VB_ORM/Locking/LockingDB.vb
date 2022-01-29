@@ -5,24 +5,23 @@ Public Class LockingDB
 
     Private _sk As String
 
-    Public Property sk As String
-        Get
-            Return _sk
-        End Get
-        Private Set(ByVal value As String)
-            _sk = value
-        End Set
-    End Property
+    Public Function GetSk() As String
+        Return _sk
+    End Function
+
+    Private Sub SetSk(value As String)
+        _sk = value
+    End Sub
 
     Public Property LockingTime As Integer = 120
 
     Public Sub New()
-        sk = Guid.NewGuid().ToString()
+        SetSk(Guid.NewGuid().ToString())
     End Sub
 
-    Public Sub Release(o As Object) Implements ILockDB.Release
+    Public Sub ReleaseObj(o As Object) Implements ILockDB.ReleaseObj
         Dim keys = getKeys(o)
-        Dim cmd As IDbCommand = Connection.CreateCommand()
+        Dim cmd As IDbCommand = GetConnection().CreateCommand()
         cmd.CommandText = "DELETE FROM LOCKS WHERE JCLASS = :c AND JOBJECT = :o AND JOWNER = :s"
         Dim p As IDataParameter = cmd.CreateParameter()
         p.ParameterName = ":c"
@@ -34,34 +33,34 @@ Public Class LockingDB
         cmd.Parameters.Add(p)
         p = cmd.CreateParameter()
         p.ParameterName = ":s"
-        p.Value = sk
+        p.Value = GetSk()
         cmd.Parameters.Add(p)
         cmd.ExecuteNonQuery()
         cmd.Dispose()
     End Sub
 
-    Public Sub Lock(o As Object) Implements ILockDB.Lock
+    Public Sub LockObj(o As Object) Implements ILockDB.LockObj
         Dim hv = getLock(o)
-        If Equals(hv, sk) Then Return
+        If Equals(hv, GetSk()) Then Return
 
         If Equals(hv, Nothing) Then
             createLock(o)
             hv = getLock(o)
         End If
 
-        If Not Equals(hv, sk) Then
+        If Not Equals(hv, GetSk()) Then
             Throw New Exception("Object " + o.GetType.Name + " is locked and therefore could not be reached!")
         End If
     End Sub
 
     Private Function getKeys(o As Object) As (String, String)
         Dim ent As _Entity = o.GetType().GetEntity
-        Return (ent.TableName, ent.PrimaryKey.ToColumnType(ent.PrimaryKey.GetVal(o)).ToString())
+        Return (ent.GetTableName(), ent.GetPrimaryKey().ToColumnType(ent.GetPrimaryKey().GetVal(o)).ToString())
     End Function
 
     Private Sub createLock(ByVal o As Object)
         Dim keys = getKeys(o)
-        Dim cmd As IDbCommand = Connection.CreateCommand()
+        Dim cmd As IDbCommand = GetConnection().CreateCommand()
         cmd.CommandText = "INSERT INTO LOCKS(JCLASS, JOBJECT, JTIME, JOWNER) VALUES (:c, :o, Current_Timestamp, :s)"
         Dim p As IDataParameter = cmd.CreateParameter()
         p.ParameterName = ":c"
@@ -73,7 +72,7 @@ Public Class LockingDB
         cmd.Parameters.Add(p)
         p = cmd.CreateParameter()
         p.ParameterName = ":s"
-        p.Value = sk
+        p.Value = GetSk()
         cmd.Parameters.Add(p)
 
         Try
@@ -85,7 +84,7 @@ Public Class LockingDB
     End Sub
 
     Public Sub deleteLock()
-        Dim cmd As IDbCommand = Connection.CreateCommand()
+        Dim cmd As IDbCommand = GetConnection().CreateCommand()
         cmd.CommandText = "DELETE FROM LOCKS WHERE ((JulianDay(Current_Timestamp) - JulianDay(JTIME)) * 86400) > :t"
         Dim p As IDataParameter = cmd.CreateParameter()
         p.ParameterName = ":t"
@@ -100,7 +99,7 @@ Public Class LockingDB
     Private Function getLock(ByVal o As Object) As String
         Dim keys = getKeys(o)
         Dim rval As String = Nothing
-        Dim cmd As IDbCommand = Connection.CreateCommand()
+        Dim cmd As IDbCommand = GetConnection().CreateCommand()
         cmd.CommandText = "SELECT JOWNER FROM LOCKS WHERE JCLASS = :c AND JOBJECT = :o"
         Dim p As IDataParameter = cmd.CreateParameter()
         p.ParameterName = ":c"

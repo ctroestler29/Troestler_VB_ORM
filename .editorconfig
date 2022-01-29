@@ -1,0 +1,4 @@
+﻿[*.vb]
+
+# IDE0081: Das ByVal-Schlüsselwort ist unnötig und kann entfernt werden.
+dotnet_diagnostic.IDE0081.severity = none

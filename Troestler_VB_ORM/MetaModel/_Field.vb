@@ -16,166 +16,158 @@ Friend Class _Field
     Private _IsExternal As Boolean
 
     Public Sub New(entity As _Entity)
-        Me.Entity = entity
+        Me.SetEntity(entity)
     End Sub
 
-    Public Property Entity As _Entity
-        Get
-            Return _Entity
-        End Get
-        Private Set(value As _Entity)
-            _Entity = value
-        End Set
-    End Property
+    Public Function GetEntity() As _Entity
+        Return _Entity
+    End Function
 
-    Public Property Member As MemberInfo
-        Get
-            Return _Member
-        End Get
-        Friend Set(value As MemberInfo)
-            _Member = value
-        End Set
-    End Property
+    Private Sub SetEntity(value As _Entity)
+        _Entity = value
+    End Sub
 
+    Public Function GetMember() As MemberInfo
+        Return _Member
+    End Function
+
+    Friend Sub SetMember(value As MemberInfo)
+        _Member = value
+    End Sub
 
     Public ReadOnly Property Type As Type
         Get
 
-            If TypeOf Member Is PropertyInfo Then
-                Return CType(Member, PropertyInfo).PropertyType
+            If TypeOf GetMember() Is PropertyInfo Then
+                Return CType(GetMember(), PropertyInfo).PropertyType
             End If
 
             Throw New NotSupportedException("Member type not supported.")
         End Get
     End Property
 
-    Public Property ColumnName As String
-        Get
-            Return _ColumnName
-        End Get
-        Friend Set(value As String)
-            _ColumnName = value
-        End Set
-    End Property
+    Public Function GetColumnName() As String
+        Return _ColumnName
+    End Function
 
-    Public Property ColumnType As Type
-        Get
-            Return _ColumnType
-        End Get
-        Friend Set(value As Type)
-            _ColumnType = value
-        End Set
-    End Property
+    Friend Sub SetColumnName(value As String)
+        _ColumnName = value
+    End Sub
 
-    Public Property IsPrimaryKey As Boolean
-        Get
-            Return _IsPrimaryKey
-        End Get
-        Friend Set(value As Boolean)
-            _IsPrimaryKey = value
-        End Set
-    End Property
+    Public Function GetColumnType() As Type
+        Return _ColumnType
+    End Function
 
-    Public Property IsForeignKey As Boolean
-        Get
-            Return _IsForeignKey
-        End Get
-        Friend Set(value As Boolean)
-            _IsForeignKey = value
-        End Set
-    End Property
+    Friend Sub SetColumnType(value As Type)
+        _ColumnType = value
+    End Sub
 
-    Public Property AssignmentTable As String
-        Get
-            Return _AssignmentTable
-        End Get
-        Friend Set(value As String)
-            _AssignmentTable = value
-        End Set
-    End Property
+    Public Function GetIsPrimaryKey() As Boolean
+        Return _IsPrimaryKey
+    End Function
 
-    Public Property RemoteColumnName As String
-        Get
-            Return _RemoteColumnName
-        End Get
-        Friend Set(value As String)
-            _RemoteColumnName = value
-        End Set
-    End Property
+    Friend Sub SetIsPrimaryKey(value As Boolean)
+        _IsPrimaryKey = value
+    End Sub
 
-    Public Property IsManyToMany As Boolean
-        Get
-            Return _IsManyToMany
-        End Get
-        Friend Set(value As Boolean)
-            _IsManyToMany = value
-        End Set
-    End Property
+    Public Function GetIsForeignKey() As Boolean
+        Return _IsForeignKey
+    End Function
 
-    Public Property IsNullable As Boolean
-        Get
-            Return _IsNullable
-        End Get
-        Friend Set(value As Boolean)
-            _IsNullable = value
-        End Set
-    End Property
+    Friend Sub SetIsForeignKey(value As Boolean)
+        _IsForeignKey = value
+    End Sub
 
-    Public Property IsExternal As Boolean
-        Get
-            Return _IsExternal
-        End Get
-        Friend Set(value As Boolean)
-            _IsExternal = value
-        End Set
-    End Property
+    Public Function GetAssignmentTable() As String
+        Return _AssignmentTable
+    End Function
+
+    Friend Sub SetAssignmentTable(value As String)
+        _AssignmentTable = value
+    End Sub
+
+    Public Function GetRemoteColumnName() As String
+        Return _RemoteColumnName
+    End Function
+
+    Friend Sub SetRemoteColumnName(value As String)
+        _RemoteColumnName = value
+    End Sub
+
+    Public Function GetIsManyToMany() As Boolean
+        Return _IsManyToMany
+    End Function
+
+    Friend Sub SetIsManyToMany(value As Boolean)
+        _IsManyToMany = value
+    End Sub
+
+    Public Function GetIsNullable() As Boolean
+        Return _IsNullable
+    End Function
+
+    Friend Sub SetIsNullable(value As Boolean)
+        _IsNullable = value
+    End Sub
+
+    Public Function GetIsExternal() As Boolean
+        Return _IsExternal
+    End Function
+
+    Friend Sub SetIsExternal(value As Boolean)
+        _IsExternal = value
+    End Sub
 
     Public Function ToColumnType(ByRef value As Object) As Object
-        If IsForeignKey Then
-            If value Is Nothing Then
-                Return Nothing
+        If Not GetIsForeignKey() Then
+
+            If Type Is GetColumnType() Then
+                Return value
             End If
 
-            Dim t = If(GetType(ILazyLoading).IsAssignableFrom(Type), Type.GenericTypeArguments(0), Type)
-            Return t.GetEntity.PrimaryKey.ToColumnType(t.GetEntity.PrimaryKey.GetVal(value))
-        End If
+            If TypeOf value Is Boolean Then
+                If GetColumnType() Is GetType(Integer) Then
+                    Return If(value, 1, 0)
+                End If
 
-        If Type Is ColumnType Then
+                If GetColumnType() Is GetType(Short) Then
+                    Return CShort(If(value, 1, 0))
+                End If
+
+                If GetColumnType() Is GetType(Long) Then
+                    Return CLng(If(value, 1, 0))
+                End If
+            End If
+
             Return value
         End If
+        If value IsNot Nothing Then
 
-        If TypeOf value Is Boolean Then
-            If ColumnType Is GetType(Integer) Then
-                Return If(value, 1, 0)
-            End If
-
-            If ColumnType Is GetType(Short) Then
-                Return CShort(If(value, 1, 0))
-            End If
-
-            If ColumnType Is GetType(Long) Then
-                Return CLng(If(value, 1, 0))
-            End If
+            Dim t = If(GetType(ILazyLoading).IsAssignableFrom(Type), Type.GenericTypeArguments(0), Type)
+            Return t.GetEntity.GetPrimaryKey().ToColumnType(t.GetEntity.GetPrimaryKey().GetVal(value))
         End If
-
-        Return value
+        Return Nothing
     End Function
 
     Public Sub SetVal(ByRef obj As Object, ByRef value As Object)
-        If TypeOf Member Is PropertyInfo Then
+        If TypeOf GetMember() Is PropertyInfo Then
+            Dim propertyInfo As PropertyInfo = CType(GetMember(), PropertyInfo)
             'Dim a = value.GetType()
 
-            If Member.ToString().Contains("Int") Then
+            If GetMember().ToString() _
+                          .Contains("Int") Then
                 Dim objAsConvertible As Int32 = CType(value, Int32)
-                CType(Member, PropertyInfo).SetValue(obj, objAsConvertible)
-            ElseIf Member.ToString().Contains("String") Then
+                propertyInfo.SetValue(obj, objAsConvertible)
+            ElseIf GetMember().ToString() _
+                              .Contains("String") Then
                 Dim objAsConvertible As String = CType(value, String)
-                CType(Member, PropertyInfo).SetValue(obj, objAsConvertible)
-            ElseIf Member.ToString().Contains("Date") Then
+                propertyInfo.SetValue(obj, objAsConvertible)
+            ElseIf GetMember().ToString() _
+                              .Contains("Date") Then
                 Dim objAsConvertible As DateTime = CType(value, DateTime)
-                CType(Member, PropertyInfo).SetValue(obj, objAsConvertible)
+                propertyInfo.SetValue(obj, objAsConvertible)
             Else
-                CType(Member, PropertyInfo).SetValue(obj, value)
+                propertyInfo.SetValue(obj, value)
             End If
 
 
@@ -186,11 +178,15 @@ Friend Class _Field
     End Sub
 
     Public Function GetVal(ByRef obj As Object) As Object
-        If TypeOf Member Is PropertyInfo Then
-            Dim rval = CType(Member, PropertyInfo).GetValue(obj)
+        Dim hv As Boolean = TypeOf GetMember() Is PropertyInfo
+
+        If hv Then
+            Dim rval = CType(GetMember(), PropertyInfo).GetValue(obj)
             If TypeOf rval Is ILazyLoading Then
                 If Not (TypeOf rval Is IEnumerable) Then
-                    Return rval.GetType().GetProperty("Value").GetValue(rval)
+                    Return rval.GetType() _
+                               .GetProperty("Value") _
+                               .GetValue(rval)
                 End If
             End If
             Return rval
@@ -200,127 +196,126 @@ Friend Class _Field
     End Function
 
     Public Sub UpdateRef(ByRef obj As Object)
-        If Not IsExternal Then Return
-        If GetVal(obj) Is Nothing Then Return
+        If GetIsExternal() Then If GetVal(obj) Is Nothing Then Return
         Dim innerType As Type = Type.GetGenericArguments()(0)
-        Dim innerEntity As _Entity = innerType.GetEntity()
-        Dim pk = Entity.PrimaryKey.ToColumnType(Entity.PrimaryKey.GetVal(obj))
+        Dim ent As _Entity = GetEntity()
+        Dim pk = ent.GetPrimaryKey().ToColumnType(ent.GetPrimaryKey().GetVal(obj))
 
-        If IsManyToMany Then
-            Dim cmd As IDbCommand = Connection.CreateCommand()
-            cmd.CommandText = "DELETE FROM " & AssignmentTable & " WHERE " & ColumnName & " = :pk"
-            Dim p As IDataParameter = cmd.CreateParameter()
-            p.ParameterName = ":pk"
-            p.Value = pk
-            cmd.Parameters.Add(p)
-            cmd.ExecuteNonQuery()
-            cmd.Dispose()
+        If Not GetIsManyToMany() Then
 
-            For Each i In CType(GetVal(obj), IEnumerable)
-                cmd = Connection.CreateCommand()
-                cmd.CommandText = "INSERT INTO " & AssignmentTable & "(" & ColumnName & ", " & RemoteColumnName & ") VALUES (:pk, :fk)"
-                p = cmd.CreateParameter()
-                p.ParameterName = ":pk"
-                p.Value = pk
-                cmd.Parameters.Add(p)
-                p = cmd.CreateParameter()
-                p.ParameterName = ":fk"
-                p.Value = innerEntity.PrimaryKey.ToColumnType(innerEntity.PrimaryKey.GetVal(i))
-                cmd.Parameters.Add(p)
-                cmd.ExecuteNonQuery()
-                cmd.Dispose()
-            Next
-        Else
-            Dim remoteField = innerEntity.GetFieldForColumn(ColumnName)
-
-            If remoteField.IsNullable Then
+            If innerType.GetEntity() _
+                        .GetFieldForColumn(GetColumnName()) _
+                        .GetIsNullable() Then
                 Try
-                    Dim cmd As IDbCommand = Connection.CreateCommand()
-                    cmd.CommandText = "UPDATE " & innerEntity.TableName & " SET " & ColumnName & " = NULL WHERE " & ColumnName & " = :fk"
-                    Dim p As IDataParameter = cmd.CreateParameter()
-                    p.ParameterName = ":fk"
-                    p.Value = pk
-                    cmd.Parameters.Add(p)
-                    cmd.ExecuteNonQuery()
-                    cmd.Dispose()
-                Catch __unusedException1__ As Exception
+                    Using cmd As IDbCommand = GetConnection().CreateCommand()
+                        cmd.CommandText = "UPDATE " & innerType.GetEntity().GetTableName() & " SET " & GetColumnName() & " = NULL WHERE " & GetColumnName() & " = :fk"
+                        Dim p As IDataParameter = cmd.CreateParameter()
+                        p.ParameterName = ":fk"
+                        p.Value = pk
+                        cmd.Parameters.Add(p)
+                        cmd.ExecuteNonQuery()
+                        cmd.Dispose()
+                    End Using
+                Catch ex As Exception
                 End Try
             End If
 
             For Each i In CType(GetVal(obj), IEnumerable)
-                remoteField.SetVal(i, obj)
-                Dim cmd As IDbCommand = Connection.CreateCommand()
-                cmd.CommandText = "UPDATE " & innerEntity.TableName & " SET " & ColumnName & " = :fk WHERE " & innerEntity.PrimaryKey.ColumnName & " = :pk"
+                innerType.GetEntity() _
+                         .GetFieldForColumn(GetColumnName()) _
+                         .SetVal(i, obj)
+                Using cmd As IDbCommand = GetConnection().CreateCommand()
+                    cmd.CommandText = "UPDATE " & innerType.GetEntity().GetTableName() & " SET " & GetColumnName() & " = :fk WHERE " & innerType.GetEntity().GetPrimaryKey().GetColumnName() & " = :pk"
+                    Dim p As IDataParameter = cmd.CreateParameter()
+                    p.ParameterName = ":fk"
+                    p.Value = pk
+                    cmd.Parameters.Add(p)
+                    p = cmd.CreateParameter()
+                    p.ParameterName = ":pk"
+                    p.Value = innerType.GetEntity().GetPrimaryKey().ToColumnType(innerType.GetEntity().GetPrimaryKey().GetVal(i))
+                    cmd.Parameters.Add(p)
+                    cmd.ExecuteNonQuery()
+                    cmd.Dispose()
+                End Using
+            Next
+        Else
+            Using cmd As IDbCommand = GetConnection().CreateCommand()
+                cmd.CommandText = "DELETE FROM " & GetAssignmentTable() & " WHERE " & GetColumnName() & " = :pk"
                 Dim p As IDataParameter = cmd.CreateParameter()
-                p.ParameterName = ":fk"
-                p.Value = pk
-                cmd.Parameters.Add(p)
-                p = cmd.CreateParameter()
                 p.ParameterName = ":pk"
-                p.Value = innerEntity.PrimaryKey.ToColumnType(innerEntity.PrimaryKey.GetVal(i))
+                p.Value = pk
                 cmd.Parameters.Add(p)
                 cmd.ExecuteNonQuery()
                 cmd.Dispose()
-            Next
+
+                For Each i In CType(GetVal(obj), IEnumerable)
+                    cmd.CommandText = "INSERT INTO " & GetAssignmentTable() & "(" & GetColumnName() & ", " & GetRemoteColumnName() & ") VALUES (:pk, :fk)"
+                    p = cmd.CreateParameter()
+                    p.ParameterName = ":pk"
+                    p.Value = pk
+                    cmd.Parameters.Add(p)
+                    p = cmd.CreateParameter()
+                    p.ParameterName = ":fk"
+                    p.Value = innerType.GetEntity().GetPrimaryKey().ToColumnType(innerType.GetEntity().GetPrimaryKey().GetVal(i))
+                    cmd.Parameters.Add(p)
+                    cmd.ExecuteNonQuery()
+                    cmd.Dispose()
+                Next
+            End Using
         End If
     End Sub
 
-    Public Function ToFieldType(ByRef value As Object, ByVal localCache As ICollection(Of Object)) As Object
-        If IsForeignKey Then
-            If GetType(ILazyLoading).IsAssignableFrom(Type) Then
-                Return Activator.CreateInstance(Type, value)
-            End If
-            Return CreateObj(Type, value, localCache)
-        End If
+    Public Function ToFieldType(ByRef value As Object) As Object
+        If Not GetIsForeignKey() Then
 
-        If Type Is GetType(Boolean) Then
-            If TypeOf value Is Integer Then
-                Return CInt(value) <> 0
-            End If
+            If Type Is GetType(Boolean) Then
+                If TypeOf value Is Integer Then
+                    Return CInt(value) <> 0
+                End If
 
-            If TypeOf value Is Long Then
-                Return CLng(value) <> 0
-            End If
+                If TypeOf value Is Long Then
+                    Return CLng(value) <> 0
+                End If
 
-            If TypeOf value Is Short Then
-                Return CShort(value) <> 0
+                If TypeOf value Is Short Then
+                    Return CShort(value) <> 0
+                End If
+
+
             End If
 
+            If Type Is GetType(Short) Then
+                Return Convert.ToInt16(value)
+            End If
 
+            If Type Is GetType(Integer) Then
+                Return Convert.ToInt32(value)
+            End If
+
+            If Type Is GetType(Long) Then
+                Return Convert.ToInt64(value)
+            End If
+
+            If Type.IsEnum Then
+                Return [Enum].ToObject(Type, value)
+            End If
+
+            Return value
         End If
-
-        If Type Is GetType(Short) Then
-            Return Convert.ToInt16(value)
-        End If
-
-        If Type Is GetType(Integer) Then
-            Return Convert.ToInt32(value)
-        End If
-
-        If Type Is GetType(Long) Then
-            Return Convert.ToInt64(value)
-        End If
-
-        If Type.IsEnum Then
-            Return [Enum].ToObject(Type, value)
-        End If
-
-        Return value
+        Return If(GetType(ILazyLoading).IsAssignableFrom(Type), Activator.CreateInstance(Type, value), NewObj(Type, value))
     End Function
 
-    Public Function Fill(ByRef list As Object, ByRef obj As Object, ByVal localCache As ICollection(Of Object)) As Object
-        Call _FillList(Type.GenericTypeArguments(0), list, _FkSql, New Tuple(Of String, Object)() {New Tuple(Of String, Object)(":fk", Entity.PrimaryKey.GetVal(obj))}, localCache)
+    Public Function Fill(ByRef list As Object, ByRef obj As Object) As Object
+        Call _FillList(Type.GenericTypeArguments(0), list, Get_FkSql(),
+                       New Tuple(Of String, Object)() {New Tuple(Of String, Object)(":fk", GetEntity().GetPrimaryKey().GetVal(obj))})
         Return list
     End Function
 
-    Friend ReadOnly Property _FkSql As String
-        Get
-            If IsManyToMany Then
-                Return Type.GenericTypeArguments(0).GetEntity().GetSQL() & " WHERE ID IN (SELECT " & RemoteColumnName & " FROM " & AssignmentTable & " WHERE " & ColumnName & " = :fk)"
-            End If
+    Friend Function Get_FkSql() As String
+        If GetIsManyToMany() Then
+            Return Type.GenericTypeArguments(0).GetEntity().GetSQL() & " WHERE ID IN (SELECT " & GetRemoteColumnName() & " FROM " & GetAssignmentTable() & " WHERE " & GetColumnName() & " = :fk)"
+        End If
 
-            Return Type.GenericTypeArguments(0).GetEntity().GetSQL() & " WHERE " & ColumnName & " = :fk"
-        End Get
-    End Property
-
+        Return Type.GenericTypeArguments(0).GetEntity().GetSQL() & " WHERE " & GetColumnName() & " = :fk"
+    End Function
 End Class

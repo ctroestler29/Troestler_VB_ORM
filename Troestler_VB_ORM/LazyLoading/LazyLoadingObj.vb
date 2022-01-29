@@ -1,9 +1,9 @@
-﻿Public Class LazyLoadingObj(Of T)
+﻿Public Class LazyLoadingObj(Of _Type)
     Implements ILazyLoading
 
     Protected pk As Object
 
-    Protected _value As T
+    Protected _value As _Type
 
     Protected initialized As Boolean = False
 
@@ -12,29 +12,29 @@
     End Sub
 
 
-    Public Property Value As T
+    Public Property Value As _Type
         Get
 
             If Not initialized Then
-                _value = [Get](Of T)(pk)
+                _value = [GetObjectType](Of _Type)(pk)
                 initialized = True
             End If
 
             Return _value
         End Get
-        Set(value As T)
+        Set(value As _Type)
             _value = value
             initialized = True
         End Set
     End Property
 
 
-    Public Shared Widening Operator CType(ByVal lazy As LazyLoadingObj(Of T)) As T
+    Public Shared Widening Operator CType(ByVal lazy As LazyLoadingObj(Of _Type)) As _Type
         Return lazy._value
     End Operator
 
-    Public Shared Widening Operator CType(ByVal obj As T) As LazyLoadingObj(Of T)
-        Dim rval As LazyLoadingObj(Of T) = New LazyLoadingObj(Of T)()
+    Public Shared Widening Operator CType(ByVal obj As _Type) As LazyLoadingObj(Of _Type)
+        Dim rval As LazyLoadingObj(Of _Type) = New LazyLoadingObj(Of _Type)()
         rval.Value = obj
         Return rval
     End Operator
