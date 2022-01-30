@@ -246,7 +246,7 @@ Friend Class _Field
                 p.Value = pk
                 cmd.Parameters.Add(p)
                 cmd.ExecuteNonQuery()
-                cmd.Dispose()
+
 
                 For Each i In CType(GetVal(obj), IEnumerable)
                     cmd.CommandText = "INSERT INTO " & GetAssignmentTable() & "(" & GetColumnName() & ", " & GetRemoteColumnName() & ") VALUES (:pk, :fk)"
@@ -259,10 +259,12 @@ Friend Class _Field
                     p.Value = innerType.GetEntity().GetPrimaryKey().ToColumnType(innerType.GetEntity().GetPrimaryKey().GetVal(i))
                     cmd.Parameters.Add(p)
                     cmd.ExecuteNonQuery()
-                    cmd.Dispose()
+
                 Next
+                cmd.Dispose()
             End Using
         End If
+
     End Sub
 
     Public Function ToFieldType(ByRef value As Object) As Object

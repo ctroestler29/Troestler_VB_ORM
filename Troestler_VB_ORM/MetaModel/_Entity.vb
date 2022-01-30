@@ -20,22 +20,22 @@ Friend Class _Entity
             End If
 
             SetMember(t)
-                Dim fields As List(Of _Field) = New List(Of _Field)()
+            Dim fields As List(Of _Field) = New List(Of _Field)()
 
-                For i1 = 0 To t.GetProperties(BindingFlags.Public Or BindingFlags.NonPublic Or BindingFlags.Instance).Length - 1
-                    Dim i = t.GetProperties(BindingFlags.Public Or BindingFlags.NonPublic Or BindingFlags.Instance)(i1)
-                    If CType(i.GetCustomAttribute(GetType(IgnoreAttr)), IgnoreAttr) IsNot Nothing Then Continue For
-                    Dim field As _Field = New _Field(Me)
-                    Dim fattr = CType(i.GetCustomAttribute(GetType(FieldAttr)), FieldAttr)
+            For i1 = 0 To t.GetProperties(BindingFlags.Public Or BindingFlags.NonPublic Or BindingFlags.Instance).Length - 1
+                Dim i = t.GetProperties(BindingFlags.Public Or BindingFlags.NonPublic Or BindingFlags.Instance)(i1)
+                If CType(i.GetCustomAttribute(GetType(IgnoreAttr)), IgnoreAttr) IsNot Nothing Then Continue For
+                Dim field As _Field = New _Field(Me)
+                Dim fattr = CType(i.GetCustomAttribute(GetType(FieldAttr)), FieldAttr)
 
-                    If fattr Is Nothing Then
-                        If (i.GetGetMethod() Is Nothing) OrElse (Not i.GetGetMethod().IsPublic) Then Continue For
-                        field.SetColumnName(value:=i.Name)
-                        field.SetColumnName(value:=i.Name)
-                        field.SetColumnType(value:=i.PropertyType)
-                    Else
+                If fattr Is Nothing Then
+                    If (i.GetGetMethod() Is Nothing) OrElse (Not i.GetGetMethod().IsPublic) Then Continue For
+                    field.SetColumnName(value:=i.Name)
+                    field.SetColumnName(value:=i.Name)
+                    field.SetColumnType(value:=i.PropertyType)
+                Else
 
-                        If TypeOf fattr Is PKAttr Then
+                    If TypeOf fattr Is PKAttr Then
                         SetPrimaryKey(field)
                         field.SetIsPrimaryKey(True)
                     End If
@@ -128,6 +128,9 @@ Friend Class _Entity
             query += prefix.Trim() & GetInternals()(i).GetColumnName()
         Next
 
+        If query Is "SELECT " Then
+            query += "*"
+        End If
         query += " FROM " & GetTableName()
         Return query
     End Function

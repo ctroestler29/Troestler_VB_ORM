@@ -9,12 +9,10 @@ Module Program
 
         SetTableManagement(New TableManagement())
         SetCache(New Cache())
-        SetQueryBuilder(New QueryBuilderOperations())
-        Call DoCreateTable()
         Call DoDropTable()
+        Call DoCreateTable()
         Call DoResetSchema()
         Call DoInsert()
-        Call DOQueryTest()
         Call DoDelete()
         Call DoModify()
         Call DOCacheTest()

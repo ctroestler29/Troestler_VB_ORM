@@ -2,13 +2,14 @@
     Public Sub DoModify()
 
         Console.WriteLine("Modify-Test")
-        Dim teacher = [GetObjectType](Of Teacher)("t.0")
-        Console.WriteLine(teacher.FirstName & " " & teacher.Name & " hat eine Gehalt von " & teacher.Salary & " Euro.")
-        Console.WriteLine("Change first name to Markus.")
-        teacher.FirstName = "Markus"
-        Save(teacher)
-        Dim teacher2 = [GetObjectType](Of Teacher)("t.0")
-        Console.WriteLine(teacher2.FirstName & " " & teacher2.Name & " hat eine Gehalt von " & teacher2.Salary & " Euro.")
+
+        Dim spieler = [GetObjectType](Of Spieler)("s.0")
+        Console.WriteLine(spieler.FirstName & " " & spieler.Name & " hat die Rückennummer " & spieler.Nummer)
+        Console.WriteLine("Ändere die Rückennummer zu 11")
+        spieler.Nummer = 11
+        Save(spieler)
+        spieler = [GetObjectType](Of Spieler)("s.0")
+        Console.WriteLine(spieler.FirstName & " " & spieler.Name & " hat nun die Rückennummer " & spieler.Nummer)
         Console.WriteLine(vbLf)
 
     End Sub

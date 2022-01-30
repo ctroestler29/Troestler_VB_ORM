@@ -1,6 +1,4 @@
-﻿
-Public MustInherit Class Person
-
+﻿Public Class Persons
     <PKAttr>
     Public Property ID As String
 
@@ -9,7 +7,7 @@ Public MustInherit Class Person
 
     Public Property Gender As Gender
 
-    <FieldAttr(ColumnName:="BDATE")>
+    <FieldAttr(ColumnName:="BDate")>
     Public Property BirthDate As Date
 
     Private _InstanceNumber As Integer
@@ -24,6 +22,7 @@ Public MustInherit Class Person
             _InstanceNumber = value
         End Set
     End Property
+
 End Class
 
 Public Enum Gender As Integer

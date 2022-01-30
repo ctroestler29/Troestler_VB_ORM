@@ -9,8 +9,8 @@
 
     Private Sub GetInstanceNumber()
         For i = 0 To 10 - 1
-            Dim t = [GetObjectType](Of Teacher)("t.0")
-            Console.WriteLine("Object with TeacherID: " & t.ID & " and instance-number: " & t.InstanceNumber)
+            Dim s = [GetObjectType](Of Spieler)("s.0")
+            Console.WriteLine("Object with SpielerID: " & s.ID & " and instance-number: " & s.InstanceNumber)
         Next
     End Sub
 End Module

@@ -1,12 +1,18 @@
 ﻿Module TableManagementTest
     Public Sub DoCreateTable()
-        CreateTable(Of TESTCLass)()
-        Console.WriteLine("Successfully created Table")
+        CreateTable(Of Verein)()
+        CreateTable(Of Trainer)()
+        CreateTable(Of Spieler)()
+        CreateTable(Of Position)()
+        Console.WriteLine("Successfully created Tables")
         Console.WriteLine(vbLf)
     End Sub
 
     Public Sub DoDropTable()
-        DropTable(Of TESTCLass)()
+        DropTable(Of Verein)()
+        DropTable(Of Trainer)()
+        DropTable(Of Spieler)()
+        DropTable(Of Position)()
         Console.WriteLine("Successfully droped Table")
         Console.WriteLine(vbLf)
     End Sub

@@ -50,15 +50,6 @@ Public Module ORMapper
         _TableManagement = value
     End Sub
 
-    Private _queryBuilder As QueryBuilder
-
-    Public Function GetQueryBuilder() As QueryBuilder
-        Return _queryBuilder
-    End Function
-
-    Public Sub SetQueryBuilder(value As QueryBuilder)
-        _queryBuilder = value
-    End Sub
 
     Public Function [GetObjectType](Of Type)(pk As Object) As Type
         If pk Is Nothing Then
@@ -338,18 +329,6 @@ Public Module ORMapper
         GetTableManagement().ResetDBSchema()
     End Sub
 
-    Public Sub From(Of Type)()
-        GetQueryBuilder().From(Of Type)()
-    End Sub
-
-    Public Sub GreaterThan(field As String, value As String)
-        GetQueryBuilder().GreaterThan(field, value)
-    End Sub
-
-    Public Function Find()
-        Return GetQueryBuilder().Find()
-    End Function
-
 
     Public Sub RemoveObj(obj As Object)
 
@@ -373,6 +352,24 @@ Public Module ORMapper
             cache.RemoveObject(obj)
         End If
     End Sub
+
+    <Extension()>
+    Friend Function GetChildrenOf(ByVal t As Type) As Type()
+        Dim rval As List(Of Type) = New List(Of Type)()
+
+        For Each i In _Entities.Keys
+
+            If t.IsAssignableFrom(i) AndAlso Not i.IsAbstract Then
+                rval.Add(i)
+            End If
+        Next
+
+        Return rval.ToArray()
+    End Function
+
+    Public Function [Select](Of _type)() As QueryBuilder(Of _type)
+        Return New QueryBuilder(Of _type)(Nothing)
+    End Function
 
 
 

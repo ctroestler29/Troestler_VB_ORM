@@ -106,8 +106,10 @@ Public Class TableManagement
             Return "VARCHAR(24)"
         ElseIf t.Contains("Gender") Then
             Return "INTEGER"
+        ElseIf t.Contains("Lazy") Then
+            Return "VARCHAR(24)"
         End If
-        Return ""
+        Return "VARCHAR(24)"
     End Function
 
 
