@@ -15,17 +15,17 @@
 
 
     Public Sub New(ByVal obj As Object, ByVal fieldName As String)
-        Dim f = ORMapper.GetEntity(obj) _
+        Dim f = ORMapper.GetTableOf(obj) _
                         .GetFieldByName(fieldName)
         sql = f.Get_FkSql()
-        Dim tuples As Tuple(Of String, Object)() = New Tuple(Of String, Object)() {New Tuple(Of String, Object)(":fk", f.GetEntity().GetPrimaryKey().GetVal(obj))}
+        Dim tuples As Tuple(Of String, Object)() = New Tuple(Of String, Object)() {New Tuple(Of String, Object)(":fk", f.GetTable().GetPrimaryKey().GetVal(obj))}
         parameters = tuples
     End Sub
 
     Protected Function GetItems() As List(Of T)
         If _InternalItems Is Nothing Then
             _InternalItems = New List(Of T)()
-            _FillList(GetType(T), _InternalItems, sql, parameters)
+            FList(_InternalItems, sql, GetType(T), parameters)
         End If
 
         Return _InternalItems

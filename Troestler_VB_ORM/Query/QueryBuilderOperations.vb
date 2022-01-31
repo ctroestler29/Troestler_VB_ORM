@@ -3,19 +3,19 @@
 Public Class QueryBuilderOperations
 
     Enum Operation As Integer
-        [AND] = 0
-        [NOT] = 1
-        [OR] = 2
-        [LIKE] = 3
-        [IN] = 4
-        GT = 5
-        LT = 6
-        EQUALS = 7
-        NOP = 8
+
+        [NOT] = 0
+        [OR] = 1
+        [LIKE] = 2
+        [IN] = 3
+        GT = 4
+        LT = 5
+        GTOE = 6
+        LTOE = 7
+        EQUALS = 8
         GRP = 9
         ENDGRP = 10
-        GTOE = 11
-        LTOE = 12
+
 
     End Enum
 

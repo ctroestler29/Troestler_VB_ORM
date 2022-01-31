@@ -1,4 +1,4 @@
-﻿<EntityAttr(TableName:="Position")>
+﻿<TableAttr(TableName:="Position")>
 Public Class Position
 
     <PKAttr>

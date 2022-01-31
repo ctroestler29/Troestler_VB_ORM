@@ -15,6 +15,7 @@
         Catch ex As Exception
             Console.WriteLine(ex.Message)
         End Try
+        'ReleaseDBObject(v)
         Console.WriteLine(vbLf)
 
 

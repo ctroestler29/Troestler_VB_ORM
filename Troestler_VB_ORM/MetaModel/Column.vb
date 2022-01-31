@@ -1,9 +1,9 @@
 ﻿
 Imports System.Data
 Imports System.Reflection
-Friend Class _Field
+Friend Class Column
 
-    Private _Entity As _Entity
+    Private _Table As Table
     Private _Member As MemberInfo
     Private _ColumnName As String
     Private _ColumnType As Type
@@ -15,16 +15,16 @@ Friend Class _Field
     Private _IsNullable As Boolean
     Private _IsExternal As Boolean
 
-    Public Sub New(entity As _Entity)
-        Me.SetEntity(entity)
+    Public Sub New(table As Table)
+        Me.SetTable(table)
     End Sub
 
-    Public Function GetEntity() As _Entity
-        Return _Entity
+    Public Function GetTable() As Table
+        Return _Table
     End Function
 
-    Private Sub SetEntity(value As _Entity)
-        _Entity = value
+    Private Sub SetTable(value As Table)
+        _Table = value
     End Sub
 
     Public Function GetMember() As MemberInfo
@@ -144,12 +144,12 @@ Friend Class _Field
         If value IsNot Nothing Then
 
             Dim t = If(GetType(ILazyLoading).IsAssignableFrom(Type), Type.GenericTypeArguments(0), Type)
-            Return t.GetEntity.GetPrimaryKey().ToColumnType(t.GetEntity.GetPrimaryKey().GetVal(value))
+            Return t.GetTableOf.GetPrimaryKey().ToColumnType(t.GetTableOf.GetPrimaryKey().GetVal(value))
         End If
         Return Nothing
     End Function
 
-    Public Sub SetVal(ByRef obj As Object, ByRef value As Object)
+    Public Sub SetVal(ByRef value As Object, ByRef obj As Object)
         If TypeOf GetMember() Is PropertyInfo Then
             Dim propertyInfo As PropertyInfo = CType(GetMember(), PropertyInfo)
             'Dim a = value.GetType()
@@ -164,7 +164,7 @@ Friend Class _Field
                 propertyInfo.SetValue(obj, objAsConvertible)
             ElseIf GetMember().ToString() _
                               .Contains("Date") Then
-                Dim objAsConvertible As DateTime = CType(value, DateTime)
+                Dim objAsConvertible As Date = CType(value, Date)
                 propertyInfo.SetValue(obj, objAsConvertible)
             Else
                 propertyInfo.SetValue(obj, value)
@@ -198,17 +198,17 @@ Friend Class _Field
     Public Sub UpdateRef(ByRef obj As Object)
         If GetIsExternal() Then If GetVal(obj) Is Nothing Then Return
         Dim innerType As Type = Type.GetGenericArguments()(0)
-        Dim ent As _Entity = GetEntity()
-        Dim pk = ent.GetPrimaryKey().ToColumnType(ent.GetPrimaryKey().GetVal(obj))
+        Dim tab As Table = GetTable()
+        Dim pk = tab.GetPrimaryKey().ToColumnType(tab.GetPrimaryKey().GetVal(obj))
 
         If Not GetIsManyToMany() Then
 
-            If innerType.GetEntity() _
+            If innerType.GetTableOf() _
                         .GetFieldForColumn(GetColumnName()) _
                         .GetIsNullable() Then
                 Try
                     Using cmd As IDbCommand = GetConnection().CreateCommand()
-                        cmd.CommandText = "UPDATE " & innerType.GetEntity().GetTableName() & " SET " & GetColumnName() & " = NULL WHERE " & GetColumnName() & " = :fk"
+                        cmd.CommandText = "UPDATE " & innerType.GetTableOf().GetTableName() & " SET " & GetColumnName() & " = NULL WHERE " & GetColumnName() & " = :fk"
                         Dim p As IDataParameter = cmd.CreateParameter()
                         p.ParameterName = ":fk"
                         p.Value = pk
@@ -221,18 +221,18 @@ Friend Class _Field
             End If
 
             For Each i In CType(GetVal(obj), IEnumerable)
-                innerType.GetEntity() _
+                innerType.GetTableOf() _
                          .GetFieldForColumn(GetColumnName()) _
-                         .SetVal(i, obj)
+                         .SetVal(obj, i)
                 Using cmd As IDbCommand = GetConnection().CreateCommand()
-                    cmd.CommandText = "UPDATE " & innerType.GetEntity().GetTableName() & " SET " & GetColumnName() & " = :fk WHERE " & innerType.GetEntity().GetPrimaryKey().GetColumnName() & " = :pk"
+                    cmd.CommandText = "UPDATE " & innerType.GetTableOf().GetTableName() & " SET " & GetColumnName() & " = :fk WHERE " & innerType.GetTableOf().GetPrimaryKey().GetColumnName() & " = :pk"
                     Dim p As IDataParameter = cmd.CreateParameter()
                     p.ParameterName = ":fk"
                     p.Value = pk
                     cmd.Parameters.Add(p)
                     p = cmd.CreateParameter()
                     p.ParameterName = ":pk"
-                    p.Value = innerType.GetEntity().GetPrimaryKey().ToColumnType(innerType.GetEntity().GetPrimaryKey().GetVal(i))
+                    p.Value = innerType.GetTableOf().GetPrimaryKey().ToColumnType(innerType.GetTableOf().GetPrimaryKey().GetVal(i))
                     cmd.Parameters.Add(p)
                     cmd.ExecuteNonQuery()
                     cmd.Dispose()
@@ -256,7 +256,7 @@ Friend Class _Field
                     cmd.Parameters.Add(p)
                     p = cmd.CreateParameter()
                     p.ParameterName = ":fk"
-                    p.Value = innerType.GetEntity().GetPrimaryKey().ToColumnType(innerType.GetEntity().GetPrimaryKey().GetVal(i))
+                    p.Value = innerType.GetTableOf().GetPrimaryKey().ToColumnType(innerType.GetTableOf().GetPrimaryKey().GetVal(i))
                     cmd.Parameters.Add(p)
                     cmd.ExecuteNonQuery()
 
@@ -304,20 +304,20 @@ Friend Class _Field
 
             Return value
         End If
-        Return If(GetType(ILazyLoading).IsAssignableFrom(Type), Activator.CreateInstance(Type, value), NewObj(Type, value))
+        Return If(GetType(ILazyLoading).IsAssignableFrom(Type), Activator.CreateInstance(Type, value), NewObj(value, Type))
     End Function
 
-    Public Function Fill(ByRef list As Object, ByRef obj As Object) As Object
-        Call _FillList(Type.GenericTypeArguments(0), list, Get_FkSql(),
-                       New Tuple(Of String, Object)() {New Tuple(Of String, Object)(":fk", GetEntity().GetPrimaryKey().GetVal(obj))})
+    Public Function Fill(ByRef obj As Object, ByRef list As Object) As Object
+        Call FList(list, Get_FkSql(), Type.GenericTypeArguments(0),
+            New Tuple(Of String, Object)() {New Tuple(Of String, Object)(":fk", GetTable().GetPrimaryKey().GetVal(obj))})
         Return list
     End Function
 
     Friend Function Get_FkSql() As String
         If GetIsManyToMany() Then
-            Return Type.GenericTypeArguments(0).GetEntity().GetSQL() & " WHERE ID IN (SELECT " & GetRemoteColumnName() & " FROM " & GetAssignmentTable() & " WHERE " & GetColumnName() & " = :fk)"
+            Return Type.GenericTypeArguments(0).GetTableOf().GetSQL() & " WHERE ID IN (SELECT " & GetRemoteColumnName() & " FROM " & GetAssignmentTable() & " WHERE " & GetColumnName() & " = :fk)"
         End If
 
-        Return Type.GenericTypeArguments(0).GetEntity().GetSQL() & " WHERE " & GetColumnName() & " = :fk"
+        Return Type.GenericTypeArguments(0).GetTableOf().GetSQL() & " WHERE " & GetColumnName() & " = :fk"
     End Function
 End Class

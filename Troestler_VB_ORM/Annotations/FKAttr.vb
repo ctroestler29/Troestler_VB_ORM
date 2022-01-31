@@ -1,5 +1,5 @@
 ﻿Public Class FKAttr
-    Inherits FieldAttr
+    Inherits ColumnAttr
 
     Public AssignmentTable As String = Nothing
 

@@ -44,7 +44,7 @@
     Private Sub _Fill(ByVal t As Type)
         Dim ops As List(Of QueryBuilder(Of _type)) = New List(Of QueryBuilder(Of _type))()
         Dim _me = Me
-        Dim ent As _Entity = t.GetEntity()
+        Dim ent As Table = t.GetTableOf()
         Dim sql As String = ent.GetSQL()
         Dim parameters As List(Of Tuple(Of String, Object)) = New List(Of Tuple(Of String, Object))()
         Dim conj = " WHERE "
@@ -53,7 +53,7 @@
         Dim clbrk = ""
         Dim n = 0
         Dim operation As String
-        Dim field As _Field
+        Dim field As Column
 
         While _me IsNot Nothing
             ops.Insert(0, _me)
@@ -116,14 +116,10 @@
                     opbrk = clbrk = ""
                     conj = " AND "
                     [not] = False
-                Case QueryBuilderOperations.Operation.GT, QueryBuilderOperations.Operation.LT
+                Case QueryBuilderOperations.Operation.GT
                     field = ent.GetFieldByName(CStr(i.arguments(0)))
 
-                    If i.GetOp() <> QueryBuilderOperations.Operation.GT Then
-                        operation = If([not], " >= ", " < ")
-                    Else
-                        operation = If([not], " <= ", " > ")
-                    End If
+                    operation = " > "
 
                     sql += $"{clbrk}{conj}{opbrk}"
                     sql += $"{field.GetColumnName}{operation}:p{n}"
@@ -131,14 +127,21 @@
                     opbrk = clbrk = ""
                     conj = " AND "
                     [not] = False
-                Case QueryBuilderOperations.Operation.AND
-                    Exit Select
-                Case QueryBuilderOperations.Operation.NOP
-                    Exit Select
                 Case QueryBuilderOperations.Operation.GTOE
                     field = ent.GetFieldByName(CStr(i.arguments(0)))
 
                     operation = " >= "
+
+                    sql += $"{clbrk}{conj}{opbrk}"
+                    sql += $"{field.GetColumnName}{operation}:p{n}"
+                    parameters.Add(New Tuple(Of String, Object)(":p" & Math.Min(Threading.Interlocked.Increment(n), n - 1).ToString(), field.ToColumnType(i.arguments(1))))
+                    opbrk = clbrk = ""
+                    conj = " AND "
+                    [not] = False
+                Case QueryBuilderOperations.Operation.LT
+                    field = ent.GetFieldByName(CStr(i.arguments(0)))
+
+                    operation = " < "
 
                     sql += $"{clbrk}{conj}{opbrk}"
                     sql += $"{field.GetColumnName}{operation}:p{n}"
@@ -157,12 +160,10 @@
                     opbrk = clbrk = ""
                     conj = " AND "
                     [not] = False
-                Case Else
-                    Exit Select
             End Select
         Next
 
-        _FillList(t, _iv, sql, parameters)
+        FList(_iv, sql, t, parameters)
     End Sub
 
     Private Function SetOperation(ByVal op As QueryBuilderOperations.Operation, ParamArray args As Object()) As QueryBuilder(Of _type)
@@ -177,9 +178,6 @@
         Return SetOperation(QueryBuilderOperations.Operation.NOT)
     End Function
 
-    Public Function [And]() As QueryBuilder(Of _type)
-        Return SetOperation(QueryBuilderOperations.Operation.AND)
-    End Function
 
     Public Function [Or]() As QueryBuilder(Of _type)
         Return SetOperation(QueryBuilderOperations.Operation.OR)

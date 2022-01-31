@@ -5,9 +5,9 @@
     Public Property FirstName As String
     Public Property Name As String
 
-    Public Property Gender As Gender
+    'Public Property Gender As Gender
 
-    <FieldAttr(ColumnName:="BDate")>
+    <ColumnAttr(ColumnName:="BDate")>
     Public Property BirthDate As Date
 
     Private _InstanceNumber As Integer

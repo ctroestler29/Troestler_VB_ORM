@@ -6,19 +6,19 @@
         Dim position As Position = New Position()
         position.ID = "p.0"
         position.Beschreibung = "Stürmer"
-        Save(position)
+        SaveObject(position)
         position = New Position()
         position.ID = "p.1"
         position.Beschreibung = "Mittelfeld"
-        Save(position)
+        SaveObject(position)
         position = New Position()
         position.ID = "p.2"
         position.Beschreibung = "Verteidigung"
-        Save(position)
+        SaveObject(position)
         position = New Position()
         position.ID = "p.3"
         position.Beschreibung = "Tormann"
-        Save(position)
+        SaveObject(position)
 
 
         Dim p As Position = [GetObjectType](Of Position)("p.2")
@@ -28,18 +28,18 @@
         spieler.ID = "s.1"
         spieler.Name = "Max"
         spieler.FirstName = "Haller"
-        spieler.Gender = Gender.MALE
-        spieler.BirthDate = New DateTime(2001, 4, 23)
+        'spieler.Gender = Gender.MALE
+        spieler.BirthDate = New Date(2001, 4, 23)
         spieler.Nummer = 2
         spieler.Marktwert = 50000
         spieler.PositionList.Add(p)
         spieler.PositionList.Add(p2)
-        Save(spieler)
+        SaveObject(spieler)
 
         Dim s As Spieler = [GetObjectType](Of Spieler)("s.0")
         s.PositionList.Add([GetObjectType](Of Position)("p.0"))
         s.PositionList.Add([GetObjectType](Of Position)("p.1"))
-        Save(s)
+        SaveObject(s)
 
         s = [GetObjectType](Of Spieler)("s.1")
         Console.WriteLine(s.FirstName + " " + s.Name + " spielt folgende Position(en): ")

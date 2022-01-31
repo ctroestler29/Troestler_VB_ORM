@@ -1,8 +1,8 @@
-﻿<EntityAttr(TableName:="Trainer")>
+﻿<TableAttr(TableName:="Trainer")>
 Public Class Trainer
     Inherits Persons
 
-    <FKAttr(ColumnName:="KVerein")>
+    <FKAttr(ColumnName:="KVerein", IsNullable:=True)>
     Public Property Verein As Verein
 
     Public Property Gehalt As Integer

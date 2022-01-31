@@ -1,5 +1,5 @@
 ﻿<AttributeUsage(AttributeTargets.Class)>
-Public Class EntityAttr
+Public Class TableAttr
     Inherits Attribute
     Public TableName As String
 End Class

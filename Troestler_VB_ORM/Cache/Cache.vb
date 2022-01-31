@@ -47,12 +47,12 @@ Public Class Cache
         If o Is Nothing Then
             Return
         End If
-        GetCache(o.GetType())(ORMapper.GetEntity(o).GetPrimaryKey().GetVal(o)) = o
+        GetCache(o.GetType())(ORMapper.GetTableOf(o).GetPrimaryKey().GetVal(o)) = o
     End Sub
 
     Public Overridable Function ObjectChanged(o As Object) As Boolean Implements ICache.ObjectChanged
         Dim h As Dictionary(Of Object, String) = GetHash(o.GetType())
-        Dim pk = ORMapper.GetEntity(o).GetPrimaryKey().GetVal(o)
+        Dim pk = ORMapper.GetTableOf(o).GetPrimaryKey().GetVal(o)
 
         If h.ContainsKey(pk) Then
             Return Equals(h(pk), _ComputeHash(o))
@@ -64,13 +64,13 @@ Public Class Cache
     Private Function _ComputeHash(o As Object) As Object
         Dim rval = ""
 
-        For Each i In ORMapper.GetEntity(o).GetInternals()
+        For Each i In ORMapper.GetTableOf(o).GetInternals()
             Dim m = i.GetVal(o)
 
             If m IsNot Nothing Then
                 If i.GetIsForeignKey() Then
                     If m IsNot Nothing Then
-                        rval += ORMapper.GetEntity(m).GetPrimaryKey().GetVal(m).ToString()
+                        rval += ORMapper.GetTableOf(m).GetPrimaryKey().GetVal(m).ToString()
                     End If
                 Else
                     rval += (i.GetColumnName() & "=" & m.ToString() & ";")
@@ -78,14 +78,14 @@ Public Class Cache
             End If
         Next
 
-        For Each i In ORMapper.GetEntity(o).GetExternals()
+        For Each i In ORMapper.GetTableOf(o).GetExternals()
             Dim m = CType(i.GetVal(o), IEnumerable)
 
             If m IsNot Nothing Then
                 rval += i.GetColumnName() & "="
 
                 For Each k In m
-                    rval += ORMapper.GetEntity(k).GetPrimaryKey().GetVal(k).ToString() & ","
+                    rval += ORMapper.GetTableOf(k).GetPrimaryKey().GetVal(k).ToString() & ","
                 Next
             End If
         Next
@@ -105,7 +105,7 @@ Public Class Cache
     End Function
 
     Public Overridable Sub RemoveObject(ByVal obj As Object) Implements ICache.RemoveObject
-        GetCache(obj.GetType()).Remove(ORMapper.GetEntity(obj).GetPrimaryKey.GetVal(obj))
+        GetCache(obj.GetType()).Remove(ORMapper.GetTableOf(obj).GetPrimaryKey.GetVal(obj))
     End Sub
 
 End Class

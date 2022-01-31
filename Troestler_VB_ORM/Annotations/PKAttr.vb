@@ -1,4 +1,4 @@
 ﻿Public Class PKAttr
-    Inherits FieldAttr
+    Inherits ColumnAttr
 
 End Class

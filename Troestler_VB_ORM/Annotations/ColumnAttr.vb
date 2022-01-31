@@ -1,4 +1,4 @@
-﻿Public Class FieldAttr
+﻿Public Class ColumnAttr
     Inherits Attribute
 
     Public ColumnName As String = Nothing

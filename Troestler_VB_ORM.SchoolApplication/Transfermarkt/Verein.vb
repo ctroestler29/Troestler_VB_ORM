@@ -1,4 +1,4 @@
-﻿<EntityAttr(TableName:="Verein")>
+﻿<TableAttr(TableName:="Verein")>
 Public Class Verein
 
     <PKAttr>
@@ -9,7 +9,7 @@ Public Class Verein
     Public Property Adresse As String
 
 
-    <FKAttr(ColumnName:="KTrainer")>
+    <FKAttr(ColumnName:="KTrainer", IsNullable:=True)>
     Private Property _Trainer As LazyLoadingObj(Of Trainer) = New LazyLoadingObj(Of Trainer)()
 
     <IgnoreAttr>
@@ -22,7 +22,7 @@ Public Class Verein
         End Set
     End Property
 
-    <FKAttr(ColumnName:="KVerein")>
+    <FKAttr(ColumnName:="KVerein", IsNullable:=True)>
     Public Property Spieler As LazyLoadingList(Of Spieler)
 
     Public Sub New()

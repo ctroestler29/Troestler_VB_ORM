@@ -7,7 +7,7 @@ Public Class TableManagement
 
         Dim cmd As IDbCommand = GetConnection().CreateCommand()
         Dim t = GetType(Type)
-        Dim ent = t.GetEntity
+        Dim ent = t.GetTableOf
 
         If tablename Is Nothing Then
             tablename = ent.GetTableName()
@@ -16,12 +16,14 @@ Public Class TableManagement
         Dim create = "CREATE TABLE IF NOT EXISTS " + tablename + "( "
 
         Dim i As Integer = 1
-        Dim hv As Integer = ent.GetFields.Length
-        For Each item As _Field In ent.GetFields
+        Dim hv As Integer = ent.GetColumns.Length
+        For Each item As Column In ent.GetColumns
             create += item.GetColumnName() + " "
             create += GetDBColumType(item.GetColumnType().Name) + " "
             If item.GetIsNullable Then
-                create += "NOT NULL"
+                create += "NULL "
+            Else
+                create += "NOT NULL "
             End If
             If item.GetIsPrimaryKey Then
                 create += "PRIMARY KEY"
@@ -45,7 +47,7 @@ Public Class TableManagement
     Public Sub DropTable(Of Type)(Optional tablename As String = Nothing) Implements ITableManagement.DropTable
         Dim cmd As IDbCommand = GetConnection().CreateCommand()
         Dim t = GetType(Type)
-        Dim ent = t.GetEntity
+        Dim ent = t.GetTableOf
 
         If tablename Is Nothing Then
             tablename = ent.GetTableName()
@@ -93,12 +95,23 @@ Public Class TableManagement
 
         cmd2.CommandText = schema
         cmd2.ExecuteNonQuery()
+        cmd2.Dispose()
+    End Sub
+
+    Public Sub CreateIndex(indexname As String, tablename As String) Implements ITableManagement.CreateIndex
+        Dim cmd As IDbCommand = GetConnection().CreateCommand()
+
+        Dim create = "CREATE UNIQUE INDEX IF NOT EXISTS " + indexname + " ON " + tablename + "(JCLASS, JOBJECT);"
+
+        cmd.CommandText = create
+        cmd.ExecuteNonQuery()
+        cmd.Dispose()
     End Sub
 
     Public Function GetDBColumType(t As String)
         If t.Contains("List") Then
             Return "VARCHAR(24)"
-        ElseIf t.Contains("DateTime") Then
+        ElseIf t.Contains("Date") Then
             Return "TIMESTAMP"
         ElseIf t.Contains("Int") Then
             Return "INTEGER"

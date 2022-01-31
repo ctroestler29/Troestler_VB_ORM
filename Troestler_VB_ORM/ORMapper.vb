@@ -2,32 +2,32 @@
 Imports System.Data
 Public Module ORMapper
 
-    Private _Connection As IDbConnection
+    Private _DBConnection As IDbConnection
 
     Public Function GetConnection() As IDbConnection
-        Return _Connection
+        Return _DBConnection
     End Function
 
     Public Sub SetConnection(value As IDbConnection)
-        _Connection = value
+        _DBConnection = value
     End Sub
 
-    Private _Cache As ICache
+    Private _LocalCache As ICache
 
-    Public Function GetCache() As ICache
-        Return _Cache
+    Public Function GetLocalCache() As ICache
+        Return _LocalCache
     End Function
 
-    Public Sub SetCache(value As ICache)
-        _Cache = value
+    Public Sub SetLocalCache(value As ICache)
+        _LocalCache = value
     End Sub
 
 
 
-    Private ReadOnly _Entities As Dictionary(Of Type, _Entity) = New Dictionary(Of Type, _Entity)()
+    Private ReadOnly Tables As Dictionary(Of Type, Table) = New Dictionary(Of Type, Table)()
 
-    Friend Function GetEntities() As Dictionary(Of Type, _Entity)
-        Return _Entities
+    Friend Function GetTables() As Dictionary(Of Type, Table)
+        Return Tables
     End Function
 
     Private _ORLocking As ILockDB
@@ -55,46 +55,49 @@ Public Module ORMapper
         If pk Is Nothing Then
             Throw New ArgumentNullException(NameOf(pk))
         End If
-        Dim o = NewObj(GetType(Type), pk)
+        Dim o = NewObj(pk, GetType(Type))
         Return o
     End Function
 
-    Public Sub Save(ByRef obj As Object)
+    Public Sub SaveObject(ByRef obj As Object)
         If obj Is Nothing Then
             Throw New ArgumentNullException(NameOf(obj))
         End If
 
-        Dim cache As ICache = GetCache()
+        Dim cache As ICache = GetLocalCache()
 
         If cache IsNot Nothing Then
             If Not cache.ObjectChanged(obj) Then Return
         End If
 
-        'Create entity out of object
-        Dim ent As _Entity = obj.GetType().GetEntity
+        'Create table out of object
+        Dim tab As Table = obj.GetType().GetTableOf
         Using dbc As IDbCommand = GetConnection().CreateCommand()
-            dbc.CommandText = "INSERT INTO " & ent.GetTableName() & " ("
+            dbc.CommandText = "INSERT INTO " & tab.GetTableName() & " ("
             Dim update = "ON CONFLICT (" _
-                         & ent.GetPrimaryKey().GetColumnName() _
+                         & tab.GetPrimaryKey().GetColumnName() _
                          & ") DO UPDATE SET "
             Dim insert = ""
             Dim first = True
 
-            For i = 0 To ent.GetInternals().Length - 1
+            For i = 0 To tab.GetInternals().Length - 1
 
                 If i > 0 Then
                     dbc.CommandText += ", "
                     insert += ", "
                 End If
 
-                dbc.CommandText += ent.GetInternals()(i).GetColumnName()
+                dbc.CommandText += tab.GetInternals()(i).GetColumnName()
                 insert += (":v" & i.ToString())
                 Dim p As IDataParameter = dbc.CreateParameter()
                 p.ParameterName = (":v" & i.ToString())
-                p.Value = ent.GetInternals()(i).ToColumnType(ent.GetInternals()(i).GetVal(obj))
+                p.Value = tab.GetInternals()(i).ToColumnType(tab.GetInternals()(i).GetVal(obj))
+                If p.Value Is Nothing Then
+                    p.Value = DBNull.Value
+                End If
                 dbc.Parameters.Add(p)
 
-                If ent.GetInternals()(i).GetIsPrimaryKey Then
+                If tab.GetInternals()(i).GetIsPrimaryKey Then
                     Continue For
                 End If
                 If first Then
@@ -103,12 +106,16 @@ Public Module ORMapper
                     update += ", "
                 End If
 
-                update += (ent.GetInternals()(i).GetColumnName() & " = " & (":w" & i.ToString()))
+                update += (tab.GetInternals()(i).GetColumnName() & " = " & (":w" & i.ToString()))
                 p = dbc.CreateParameter()
                 p.ParameterName = (":w" & i.ToString())
-                p.Value = ent.GetInternals()(i) _
-                             .ToColumnType(ent.GetInternals()(i).GetVal(obj))
+                p.Value = tab.GetInternals()(i) _
+                             .ToColumnType(tab.GetInternals()(i).GetVal(obj))
+                If p.Value Is Nothing Then
+                    p.Value = DBNull.Value
+                End If
                 dbc.Parameters.Add(p)
+
             Next
 
             dbc.CommandText += ") VALUES (" & insert & ") " & update
@@ -116,7 +123,7 @@ Public Module ORMapper
             dbc.Dispose()
         End Using
 
-        Dim arr = ent.GetExternals()
+        Dim arr = tab.GetExternals()
         For i1 = 0 To arr.Length - 1
             Dim i = arr(i1)
             i.UpdateRef(obj)
@@ -130,24 +137,24 @@ Public Module ORMapper
 
 
     <Extension()>
-    Friend Function GetEntity(ByRef o As Object) As _Entity
-        If o Is Nothing Then
-            Throw New ArgumentNullException(NameOf(o))
+    Friend Function GetTableOf(ByRef obj As Object) As Table
+        If obj Is Nothing Then
+            Throw New ArgumentNullException(NameOf(obj))
         End If
 
-        Dim t As Type = If(Not (TypeOf o Is Type), o.GetType(), CType(o, Type))
+        Dim t As Type = If(Not (TypeOf obj Is Type), obj.GetType(), CType(obj, Type))
 
-        Dim hv As Boolean = Not GetEntities().ContainsKey(t)
+        Dim hv As Boolean = Not GetTables().ContainsKey(t)
 
         If hv Then
-            Call GetEntities().Add(t, New _Entity(t))
+            Call GetTables().Add(t, New Table(t))
         End If
 
-        Return GetEntities()(t)
+        Return GetTables()(t)
     End Function
 
 
-    Friend Function NewObj(t As Type, pk As Object) As Object
+    Friend Function NewObj(pk As Object, t As Type) As Object
 
         If pk Is Nothing Then
             Throw New ArgumentNullException(NameOf(pk))
@@ -158,7 +165,7 @@ Public Module ORMapper
         End If
 
         Using dbc As IDbCommand = GetConnection().CreateCommand()
-            dbc.CommandText = t.GetEntity().GetSQL() & " WHERE " & t.GetEntity().GetPrimaryKey().GetColumnName() & " = :pk"
+            dbc.CommandText = t.GetTableOf().GetSQL() & " WHERE " & t.GetTableOf().GetPrimaryKey().GetColumnName() & " = :pk"
             Dim p As IDataParameter = dbc.CreateParameter()
             p.ParameterName = ":pk"
             p.Value = pk
@@ -167,23 +174,23 @@ Public Module ORMapper
 
                 Dim obj As Object = Nothing
                 If dbr.Read() Then
-                    obj = NewObj(t, dbr)
+                    obj = NewObj(dbr, t)
                 End If
 
                 dbr.Close()
                 dbc.Dispose()
 
-                If GetCache() Is Nothing Then
+                If GetLocalCache() Is Nothing Then
                     Return obj
                 End If
-                GetCache().StoreObject(obj)
+                GetLocalCache().StoreObject(obj)
 
                 Return obj
             End Using
         End Using
     End Function
 
-    Friend Function NewObj(t As Type, re As IDataReader) As Object
+    Friend Function NewObj(re As IDataReader, t As Type) As Object
         If re Is Nothing Then
             Throw New ArgumentNullException(NameOf(re))
         End If
@@ -192,24 +199,25 @@ Public Module ORMapper
             Throw New ArgumentNullException(NameOf(t))
         End If
 
-        Dim obj = _SearchCache(t, t.GetEntity().GetPrimaryKey().ToFieldType(re.GetValue(re.GetOrdinal(t.GetEntity().GetPrimaryKey().GetColumnName()))))
+        Dim obj = LocalCacheFind(t.GetTableOf().GetPrimaryKey().ToFieldType(re.GetValue(re.GetOrdinal(t.GetTableOf().GetPrimaryKey().GetColumnName()))), t)
 
 
         If obj Is Nothing Then
-            obj = _SearchCache(t, t.GetEntity().GetPrimaryKey().ToFieldType(re.GetValue(re.GetOrdinal(t.GetEntity().GetPrimaryKey().GetColumnName()))))
+            obj = LocalCacheFind(t.GetTableOf().GetPrimaryKey().ToFieldType(re.GetValue(re.GetOrdinal(t.GetTableOf().GetPrimaryKey().GetColumnName()))), t)
         End If
 
-        For i1 = 0 To t.GetEntity().GetInternals().Length - 1
-            Dim i = t.GetEntity().GetInternals()(i1)
-            i.SetVal(obj, i.ToFieldType(re.GetValue(re.GetOrdinal(i.GetColumnName()))))
+        For i1 = 0 To t.GetTableOf().GetInternals().Length - 1
+            Dim i = t.GetTableOf().GetInternals()(i1)
+            i.SetVal(i.ToFieldType(re.GetValue(re.GetOrdinal(i.GetColumnName()))), obj)
         Next
 
-        For i1 = 0 To t.GetEntity().GetExternals().Length - 1
-            Dim i = t.GetEntity().GetExternals()(i1)
+
+        For i1 = 0 To t.GetTableOf().GetExternals().Length - 1
+            Dim i = t.GetTableOf().GetExternals()(i1)
             If GetType(ILazyLoading).IsAssignableFrom(i.Type) Then
-                i.SetVal(obj, Activator.CreateInstance(i.Type, obj, i.GetMember().Name))
+                i.SetVal(Activator.CreateInstance(i.Type, obj, i.GetMember().Name), obj)
             Else
-                i.SetVal(obj, i.Fill(Activator.CreateInstance(i.Type), obj))
+                i.SetVal(i.Fill(obj, Activator.CreateInstance(i.Type)), obj)
             End If
 
         Next
@@ -217,7 +225,7 @@ Public Module ORMapper
         Return obj
     End Function
 
-    Friend Sub _FillList(ByVal t As Type, ByRef list As Object, ByVal sql As String, ByVal parameters As IEnumerable(Of Tuple(Of String, Object)))
+    Friend Sub FList(ByRef list As Object, ByVal sql As String, ByVal t As Type, ByVal parameters As IEnumerable(Of Tuple(Of String, Object)))
         If t Is Nothing Then
             Throw New ArgumentNullException(NameOf(t))
         End If
@@ -245,13 +253,13 @@ Public Module ORMapper
         Next
 
         Dim re As IDataReader = dbc.ExecuteReader()
-        _FillList(t, list, re)
+        FList(list, t, re)
         re.Close()
         re.Dispose()
         dbc.Dispose()
     End Sub
 
-    Friend Sub _FillList(ByVal t As Type, ByRef list As Object, ByVal re As IDataReader)
+    Friend Sub FList(ByRef list As Object, ByVal t As Type, ByVal re As IDataReader)
         If t Is Nothing Then
             Throw New ArgumentNullException(NameOf(t))
         End If
@@ -265,11 +273,11 @@ Public Module ORMapper
         End If
 
         While re.Read()
-            list.GetType().GetMethod("Add").Invoke(list, New Object() {NewObj(t, re)})
+            list.GetType().GetMethod("Add").Invoke(list, New Object() {NewObj(re, t)})
         End While
     End Sub
 
-    Friend Function _SearchCache(ByVal t As Type, ByRef pk As Object) As Object
+    Friend Function LocalCacheFind(ByRef pk As Object, ByVal t As Type) As Object
         If pk Is Nothing Then
             Throw New ArgumentNullException(NameOf(pk))
         End If
@@ -278,7 +286,7 @@ Public Module ORMapper
             Throw New ArgumentNullException(NameOf(t))
         End If
 
-        Return If(GetCache() IsNot Nothing AndAlso GetCache().ContainsObjectWithPK(t, pk), GetCache().GetObjectByPK(t, pk), Nothing)
+        Return If(GetLocalCache() IsNot Nothing AndAlso GetLocalCache().ContainsObjectWithPK(t, pk), GetLocalCache().GetObjectByPK(t, pk), Nothing)
     End Function
 
     Public Sub LockDBObject(obj As Object)
@@ -321,6 +329,14 @@ Public Module ORMapper
         GetTableManagement().DropTable(Of Type)(tablename)
     End Sub
 
+    Public Sub CreateIndex(indexname As String, tablename As String)
+        If GetTableManagement() Is Nothing Then
+            Return
+        End If
+
+        GetTableManagement().CreateIndex(indexname, tablename)
+    End Sub
+
     Public Sub ResetSchema()
         If GetTableManagement() Is Nothing Then
             Return
@@ -336,17 +352,17 @@ Public Module ORMapper
             Throw New ArgumentNullException(NameOf(obj))
         End If
 
-        Dim ent As _Entity = obj.GetType().GetEntity
+        Dim tab As Table = obj.GetType().GetTableOf
         Dim cmd As IDbCommand = GetConnection.CreateCommand()
-        cmd.CommandText = "DELETE FROM " & ent.GetTableName & " WHERE " & ent.GetPrimaryKey.GetColumnName & " = :pk"
+        cmd.CommandText = "DELETE FROM " & tab.GetTableName & " WHERE " & tab.GetPrimaryKey.GetColumnName & " = :pk"
         Dim p As IDataParameter = cmd.CreateParameter()
         p.ParameterName = ":pk"
-        p.Value = ent.GetPrimaryKey.GetVal(obj)
+        p.Value = tab.GetPrimaryKey.GetVal(obj)
         cmd.Parameters.Add(p)
         cmd.ExecuteNonQuery()
         cmd.Dispose()
 
-        Dim cache As ICache = GetCache()
+        Dim cache As ICache = GetLocalCache()
 
         If cache IsNot Nothing Then
             cache.RemoveObject(obj)
@@ -355,16 +371,16 @@ Public Module ORMapper
 
     <Extension()>
     Friend Function GetChildrenOf(ByVal t As Type) As Type()
-        Dim rval As List(Of Type) = New List(Of Type)()
+        Dim obj As List(Of Type) = New List(Of Type)()
 
-        For Each i In _Entities.Keys
+        For Each i In Tables.Keys
 
             If t.IsAssignableFrom(i) AndAlso Not i.IsAbstract Then
-                rval.Add(i)
+                obj.Add(i)
             End If
         Next
 
-        Return rval.ToArray()
+        Return obj.ToArray()
     End Function
 
     Public Function [Select](Of _type)() As QueryBuilder(Of _type)

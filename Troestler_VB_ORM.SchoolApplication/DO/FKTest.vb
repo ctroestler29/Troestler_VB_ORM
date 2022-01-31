@@ -11,7 +11,7 @@
         verein.Adresse = "Teststrasse 2"
         verein.Trainer = trainer
         verein.Spieler.Add(spieler)
-        Save(verein)
+        SaveObject(verein)
 
         verein = [GetObjectType](Of Verein)("v.0")
         Console.WriteLine(verein.Name & " wird von " & verein.Trainer.FirstName & " " & verein.Trainer.Name & " trainiert")

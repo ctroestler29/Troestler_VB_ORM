@@ -1,32 +1,32 @@
 ﻿
 Imports System.Reflection
-Friend Class _Entity
+Friend Class Table
 
     Private _Member As Type
     Private _TableName As String
-    Private _Fields As _Field()
-    Private _Externals As _Field()
-    Private _Internals As _Field()
-    Private _PrimaryKey As _Field
+    Private _Columns As Column()
+    Private _Externals As Column()
+    Private _Internals As Column()
+    Private _PrimaryKey As Column
 
     Public Sub New(t As Type)
         If t IsNot Nothing Then
 
 
-            If CType(t.GetCustomAttribute(GetType(EntityAttr)), EntityAttr) Is Nothing OrElse String.IsNullOrWhiteSpace(CType(t.GetCustomAttribute(GetType(EntityAttr)), EntityAttr).TableName) Then
+            If CType(t.GetCustomAttribute(GetType(TableAttr)), TableAttr) Is Nothing OrElse String.IsNullOrWhiteSpace(CType(t.GetCustomAttribute(GetType(TableAttr)), TableAttr).TableName) Then
                 SetTableName(t.Name.ToUpper())
             Else
-                SetTableName(CType(t.GetCustomAttribute(GetType(EntityAttr)), EntityAttr).TableName)
+                SetTableName(CType(t.GetCustomAttribute(GetType(TableAttr)), TableAttr).TableName)
             End If
 
             SetMember(t)
-            Dim fields As List(Of _Field) = New List(Of _Field)()
+            Dim fields As List(Of Column) = New List(Of Column)()
 
             For i1 = 0 To t.GetProperties(BindingFlags.Public Or BindingFlags.NonPublic Or BindingFlags.Instance).Length - 1
                 Dim i = t.GetProperties(BindingFlags.Public Or BindingFlags.NonPublic Or BindingFlags.Instance)(i1)
                 If CType(i.GetCustomAttribute(GetType(IgnoreAttr)), IgnoreAttr) IsNot Nothing Then Continue For
-                Dim field As _Field = New _Field(Me)
-                Dim fattr = CType(i.GetCustomAttribute(GetType(FieldAttr)), FieldAttr)
+                Dim field As Column = New Column(Me)
+                Dim fattr = CType(i.GetCustomAttribute(GetType(ColumnAttr)), ColumnAttr)
 
                 If fattr Is Nothing Then
                     If (i.GetGetMethod() Is Nothing) OrElse (Not i.GetGetMethod().IsPublic) Then Continue For
@@ -56,7 +56,7 @@ Friend Class _Entity
                 fields.Add(field)
             Next
 
-            Me.SetFields(fields.ToArray())
+            Me.SetColumns(fields.ToArray())
             SetInternals(fields.Where(Function(m) Not m.GetIsExternal()).ToArray())
             SetExternals(fields.Where(Function(m) m.GetIsExternal()).ToArray())
         Else
@@ -80,35 +80,35 @@ Friend Class _Entity
         _TableName = value
     End Sub
 
-    Public Function GetFields() As _Field()
-        Return _Fields
+    Public Function GetColumns() As Column()
+        Return _Columns
     End Function
 
-    Private Sub SetFields(value As _Field())
-        _Fields = value
+    Private Sub SetColumns(value As Column())
+        _Columns = value
     End Sub
 
-    Public Function GetExternals() As _Field()
+    Public Function GetExternals() As Column()
         Return _Externals
     End Function
 
-    Private Sub SetExternals(value As _Field())
+    Private Sub SetExternals(value As Column())
         _Externals = value
     End Sub
 
-    Public Function GetInternals() As _Field()
+    Public Function GetInternals() As Column()
         Return _Internals
     End Function
 
-    Private Sub SetInternals(value As _Field())
+    Private Sub SetInternals(value As Column())
         _Internals = value
     End Sub
 
-    Public Function GetPrimaryKey() As _Field
+    Public Function GetPrimaryKey() As Column
         Return _PrimaryKey
     End Function
 
-    Private Sub SetPrimaryKey(value As _Field)
+    Private Sub SetPrimaryKey(value As Column)
         _PrimaryKey = value
     End Sub
 
@@ -135,7 +135,7 @@ Friend Class _Entity
         Return query
     End Function
 
-    Public Function GetFieldForColumn(ByVal columnName As String) As _Field
+    Public Function GetFieldForColumn(ByVal columnName As String) As Column
         columnName = columnName.ToUpper()
 
         For Each i In GetInternals()
@@ -148,8 +148,8 @@ Friend Class _Entity
         Return Nothing
     End Function
 
-    Public Function GetFieldByName(ByVal fieldName As String) As _Field
-        For Each i In GetFields()
+    Public Function GetFieldByName(ByVal fieldName As String) As Column
+        For Each i In GetColumns()
 
             If Equals(i.GetMember().Name, fieldName) Then
                 Return i

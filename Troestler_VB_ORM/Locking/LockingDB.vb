@@ -54,7 +54,7 @@ Public Class LockingDB
     End Sub
 
     Private Function getKeys(o As Object) As (String, String)
-        Dim ent As _Entity = o.GetType().GetEntity
+        Dim ent As Table = o.GetType().GetTableOf
         Return (ent.GetTableName(), ent.GetPrimaryKey().ToColumnType(ent.GetPrimaryKey().GetVal(o)).ToString())
     End Function
 
