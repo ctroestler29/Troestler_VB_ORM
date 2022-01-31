@@ -98,7 +98,7 @@ Public Class LockingDB
 
     Private Function getLock(ByVal o As Object) As String
         Dim keys = getKeys(o)
-        Dim rval As String = Nothing
+        Dim obj As String = Nothing
         Dim cmd As IDbCommand = GetConnection().CreateCommand()
         cmd.CommandText = "SELECT JOWNER FROM LOCKS WHERE JCLASS = :c AND JOBJECT = :o"
         Dim p As IDataParameter = cmd.CreateParameter()
@@ -112,12 +112,12 @@ Public Class LockingDB
         Dim re As IDataReader = cmd.ExecuteReader()
 
         If re.Read() Then
-            rval = re.GetString(0)
+            obj = re.GetString(0)
         End If
 
         re.Close()
         re.Dispose()
         cmd.Dispose()
-        Return rval
+        Return obj
     End Function
 End Class

@@ -62,7 +62,7 @@ Public Class Cache
     End Function
 
     Private Function _ComputeHash(o As Object) As Object
-        Dim rval = ""
+        Dim obj = ""
 
         For Each i In ORMapper.GetTableOf(o).GetInternals()
             Dim m = i.GetVal(o)
@@ -70,10 +70,10 @@ Public Class Cache
             If m IsNot Nothing Then
                 If i.GetIsForeignKey() Then
                     If m IsNot Nothing Then
-                        rval += ORMapper.GetTableOf(m).GetPrimaryKey().GetVal(m).ToString()
+                        obj += ORMapper.GetTableOf(m).GetPrimaryKey().GetVal(m).ToString()
                     End If
                 Else
-                    rval += (i.GetColumnName() & "=" & m.ToString() & ";")
+                    obj += (i.GetColumnName() & "=" & m.ToString() & ";")
                 End If
             End If
         Next
@@ -82,15 +82,15 @@ Public Class Cache
             Dim m = CType(i.GetVal(o), IEnumerable)
 
             If m IsNot Nothing Then
-                rval += i.GetColumnName() & "="
+                obj += i.GetColumnName() & "="
 
                 For Each k In m
-                    rval += ORMapper.GetTableOf(k).GetPrimaryKey().GetVal(k).ToString() & ","
+                    obj += ORMapper.GetTableOf(k).GetPrimaryKey().GetVal(k).ToString() & ","
                 Next
             End If
         Next
 
-        Return Encoding.UTF8.GetString(SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(rval)))
+        Return Encoding.UTF8.GetString(SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(obj)))
 
     End Function
 
@@ -99,9 +99,9 @@ Public Class Cache
             Return GetHash()(t)
         End If
 
-        Dim rval As Dictionary(Of Object, String) = New Dictionary(Of Object, String)()
-        GetHash().Add(t, rval)
-        Return rval
+        Dim obj As Dictionary(Of Object, String) = New Dictionary(Of Object, String)()
+        GetHash().Add(t, obj)
+        Return obj
     End Function
 
     Public Overridable Sub RemoveObject(ByVal obj As Object) Implements ICache.RemoveObject

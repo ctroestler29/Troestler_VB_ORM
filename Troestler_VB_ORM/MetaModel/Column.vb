@@ -177,19 +177,19 @@ Friend Class Column
         Throw New NotSupportedException("Type of Member is not supported.")
     End Sub
 
-    Public Function GetVal(ByRef obj As Object) As Object
+    Public Function GetVal(ByRef o As Object) As Object
         Dim hv As Boolean = TypeOf GetMember() Is PropertyInfo
 
         If hv Then
-            Dim rval = CType(GetMember(), PropertyInfo).GetValue(obj)
-            If TypeOf rval Is ILazyLoading Then
-                If Not (TypeOf rval Is IEnumerable) Then
-                    Return rval.GetType() _
+            Dim obj = CType(GetMember(), PropertyInfo).GetValue(o)
+            If TypeOf obj Is ILazyLoading Then
+                If Not (TypeOf obj Is IEnumerable) Then
+                    Return obj.GetType() _
                                .GetProperty("Value") _
-                               .GetValue(rval)
+                               .GetValue(obj)
                 End If
             End If
-            Return rval
+            Return obj
         End If
 
         Throw New NotSupportedException("Type of Member is not supported.")
