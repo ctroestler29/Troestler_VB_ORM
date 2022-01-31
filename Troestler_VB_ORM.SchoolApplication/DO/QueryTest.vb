@@ -1,9 +1,4 @@
-﻿
-Imports System
-Imports System.Data
-Imports System.Data.SQLite
-Imports System.Linq
-Imports LinqToDB
+﻿Imports System.Data
 
 Module QueryTest
     Public Sub DOQueryTest()

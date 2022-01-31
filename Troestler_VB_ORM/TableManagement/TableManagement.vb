@@ -53,7 +53,7 @@ Public Class TableManagement
             tablename = ent.GetTableName()
         End If
 
-        Dim drop = "DROP TABLE " + tablename + ";"
+        Dim drop = "DROP TABLE IF EXISTS " + tablename + ";"
 
         cmd.CommandText = drop
         cmd.ExecuteNonQuery()

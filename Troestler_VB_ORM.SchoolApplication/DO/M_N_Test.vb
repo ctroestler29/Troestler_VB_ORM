@@ -28,7 +28,7 @@
         spieler.ID = "s.1"
         spieler.Name = "Max"
         spieler.FirstName = "Haller"
-        'spieler.Gender = Gender.MALE
+        spieler.Gender = Gender.MALE
         spieler.BirthDate = New Date(2001, 4, 23)
         spieler.Nummer = 2
         spieler.Marktwert = 50000

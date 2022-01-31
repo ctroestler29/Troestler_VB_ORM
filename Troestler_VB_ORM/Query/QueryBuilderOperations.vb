@@ -1,6 +1,4 @@
-﻿Imports System.Data
-
-Public Class QueryBuilderOperations
+﻿Public Class QueryBuilderOperations
 
     Enum Operation As Integer
 
